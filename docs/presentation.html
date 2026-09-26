@@ -1,0 +1,761 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Card Dashboard API</title>
+<style>
+:root {
+  --bg: #e9eeec;
+  --slide: #ffffff;
+  --ink: #0f201d;
+  --muted: #5a6b67;
+  --faint: #8a9894;
+  --line: #dbe3e0;
+  --panel: #f3f6f5;
+  --accent: #0d5c54;
+  --accent-soft: #e4f1ee;
+  --accent-ink: #083d38;
+  --warm: #b0522a;
+  --warm-soft: #fbece5;
+  --ok: #2c7a4b;
+  --ok-soft: #e6f3eb;
+  --mono: ui-monospace, "JetBrains Mono", "SF Mono", Menlo, Consolas, monospace;
+  --sans: "Inter", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { height: 100%; }
+body { background: var(--bg); color: var(--ink); font-family: var(--sans); overflow: hidden; -webkit-font-smoothing: antialiased; }
+
+.stage { position: absolute; left: 50%; top: 50%; width: 1280px; height: 720px; transform-origin: center; }
+.slide {
+  position: absolute; inset: 0; background: var(--slide); border-radius: 14px;
+  box-shadow: 0 10px 40px rgba(15, 32, 29, .12);
+  padding: 56px 72px 64px; display: none; flex-direction: column; overflow: hidden;
+}
+.slide.active { display: flex; }
+.slide::after {
+  content: attr(data-foot); position: absolute; left: 72px; bottom: 24px;
+  font-size: 13px; color: var(--faint); letter-spacing: .02em;
+}
+
+.kicker { font-size: 13px; font-weight: 600; letter-spacing: .12em; text-transform: uppercase; color: var(--accent); margin-bottom: 10px; }
+h1 { font-size: 56px; line-height: 1.08; letter-spacing: -.02em; font-weight: 700; }
+h2 { font-size: 36px; line-height: 1.15; letter-spacing: -.015em; font-weight: 700; margin-bottom: 28px; }
+h3 { font-size: 18px; font-weight: 650; margin-bottom: 10px; }
+p, li { font-size: 19px; line-height: 1.5; }
+.lead { font-size: 22px; color: var(--muted); line-height: 1.45; }
+.muted { color: var(--muted); }
+.small { font-size: 15px; }
+code, .mono { font-family: var(--mono); font-size: .88em; }
+:not(pre) > code { background: var(--panel); border: 1px solid var(--line); padding: 1px 6px; border-radius: 5px; }
+ul.clean { list-style: none; }
+ul.clean li { position: relative; padding-left: 22px; margin-bottom: 10px; }
+ul.clean li::before { content: ""; position: absolute; left: 2px; top: .62em; width: 8px; height: 8px; border-radius: 2px; background: var(--accent); }
+strong { font-weight: 650; }
+
+.grid { display: grid; gap: 28px; }
+.g2 { grid-template-columns: 1fr 1fr; }
+.g3 { grid-template-columns: repeat(3, 1fr); }
+.g-5-7 { grid-template-columns: 5fr 7fr; }
+.g-7-5 { grid-template-columns: 7fr 5fr; }
+.fill { flex: 1; min-height: 0; }
+
+.card { background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 22px 24px; }
+.card.accent { background: var(--accent-soft); border-color: #c5e1db; }
+.card.warm { background: var(--warm-soft); border-color: #f1d3c4; }
+.card p, .card li { font-size: 17px; }
+.tag { display: inline-block; font-size: 12px; font-weight: 650; letter-spacing: .06em; text-transform: uppercase; padding: 3px 8px; border-radius: 999px; background: var(--accent-soft); color: var(--accent-ink); }
+.tag.warm { background: var(--warm-soft); color: var(--warm); }
+.tag.ok { background: var(--ok-soft); color: var(--ok); }
+
+table { width: 100%; border-collapse: collapse; font-size: 17px; }
+th { text-align: left; font-size: 12.5px; font-weight: 650; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); padding: 0 14px 10px 0; border-bottom: 2px solid var(--ink); }
+td { padding: 11px 14px 11px 0; border-bottom: 1px solid var(--line); vertical-align: top; line-height: 1.4; }
+tr:last-child td { border-bottom: none; }
+td.k { font-weight: 600; white-space: nowrap; }
+td code { white-space: nowrap; }
+.method { font-family: var(--mono); font-size: 13px; font-weight: 700; padding: 2px 7px; border-radius: 5px; }
+.get { background: var(--accent-soft); color: var(--accent-ink); }
+.post { background: var(--warm-soft); color: var(--warm); }
+
+pre { font-family: var(--mono); font-size: 14.5px; line-height: 1.5; background: #0f201d; color: #d7e4e0; border-radius: 12px; padding: 20px 24px; overflow: hidden; }
+pre .k { color: #8fd3c6; }
+pre .s { color: #f2c9a0; }
+pre .n { color: #c3b1f5; }
+pre .c { color: #6f8a84; }
+pre .b { color: #f29b9b; }
+
+svg text { font-family: var(--sans); }
+svg .mono { font-family: var(--mono); }
+
+.pipeline { display: flex; align-items: stretch; gap: 0; }
+.pipeline .step { flex: 1; background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 14px 12px; text-align: center; }
+.pipeline .step b { display: block; font-size: 15px; margin-bottom: 4px; }
+.pipeline .step span { font-size: 13px; color: var(--muted); line-height: 1.35; display: block; }
+.pipeline .arrow { width: 26px; display: grid; place-items: center; color: var(--faint); font-size: 18px; }
+.pipeline .step.hl { background: var(--accent-soft); border-color: #c5e1db; }
+
+.phone { width: 250px; background: #fff; border: 8px solid #1d2b28; border-radius: 30px; padding: 14px 12px; display: flex; flex-direction: column; gap: 7px; font-size: 11.5px; }
+.phone .row { background: #eef1f0; border-radius: 6px; padding: 8px 10px; position: relative; display: flex; justify-content: space-between; align-items: center; }
+.phone .row.card-img { height: 78px; justify-content: center; }
+.phone .row.btn { background: #1d2b28; color: #fff; justify-content: center; font-weight: 600; }
+.phone .row.dim { background: #f6f8f7; }
+.badge { position: absolute; left: -30px; top: 50%; transform: translateY(-50%); width: 22px; height: 22px; border-radius: 50%; background: var(--accent); color: #fff; font-size: 12px; font-weight: 700; display: grid; place-items: center; }
+.num { display: inline-grid; place-items: center; width: 22px; height: 22px; border-radius: 50%; background: var(--accent); color: #fff; font-size: 12px; font-weight: 700; margin-right: 6px; }
+
+.title-slide { justify-content: center; background: linear-gradient(135deg, #0d5c54 0%, #083d38 100%); color: #fff; }
+.title-slide .kicker { color: #9fd8cc; }
+.title-slide .lead { color: #cfe7e1; }
+.title-slide::after { color: #7fb5aa; }
+.divider { justify-content: center; background: var(--accent-soft); }
+.divider h1 { color: var(--accent-ink); }
+
+.chrome { position: fixed; left: 0; right: 0; bottom: 0; height: 4px; background: rgba(0,0,0,.06); }
+.chrome .bar { height: 100%; background: var(--accent); transition: width .2s ease; }
+.counter { position: fixed; right: 18px; bottom: 12px; font-size: 13px; color: var(--muted); font-variant-numeric: tabular-nums; }
+.hint { position: fixed; left: 18px; bottom: 12px; font-size: 12px; color: var(--faint); }
+
+@media print {
+  @page { size: 1280px 720px; margin: 0; }
+  body { background: #fff; overflow: visible; }
+  .stage { position: static; transform: none !important; }
+  .slide { display: flex !important; position: relative; page-break-after: always; break-after: page; box-shadow: none; border-radius: 0; width: 1280px; height: 720px; }
+  .chrome, .counter, .hint { display: none; }
+  * { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+}
+</style>
+</head>
+<body>
+<div class="stage" id="stage">
+
+<!-- 1 -->
+<section class="slide title-slide" data-foot="Node.js Backend Developer · Case study 2026">
+  <div class="kicker">Qred case study</div>
+  <h1>Card Dashboard API</h1>
+  <p class="lead" style="margin-top:18px;max-width:780px">Contract-first delivery, so frontend and backend ship in parallel. And the API behind the mobile card view.</p>
+  <p style="margin-top:56px;font-size:18px;color:#cfe7e1">Arash Taher</p>
+</section>
+
+<!-- 2 -->
+<section class="slide" data-foot="Agenda">
+  <div class="kicker">Agenda</div>
+  <h2>Two parts, one idea: agree on the contract first</h2>
+  <div class="grid g3 fill" style="align-content:start">
+    <div class="card accent">
+      <span class="tag">Part 1 · ~10 min</span>
+      <h3 style="margin-top:14px">Collaboration</h3>
+      <ul class="clean small"><li>What is actually slowing us down</li><li>A contract-first workflow</li><li>Scaling scarce spec skill</li><li>Fit with Qred's values</li></ul>
+    </div>
+    <div class="card">
+      <span class="tag">Part 2 · ~10 min</span>
+      <h3 style="margin-top:14px">API design</h3>
+      <ul class="clean small"><li>From wireframe to domain</li><li>Schema and payload</li><li>BFF aggregate endpoint</li><li>Code structure and tests</li></ul>
+    </div>
+    <div class="card">
+      <span class="tag">Demo · ~8 min</span>
+      <h3 style="margin-top:14px">Live</h3>
+      <ul class="clean small"><li>Dashboard read</li><li>Activate card, idempotent</li><li>Access control</li><li>Mock server from the spec</li></ul>
+    </div>
+  </div>
+</section>
+
+<!-- 3 -->
+<section class="slide" data-foot="Part 1 · Collaboration">
+  <div class="kicker">The problem</div>
+  <h2>Five symptoms, one root cause</h2>
+  <table>
+    <thead><tr><th style="width:28%">From the brief</th><th style="width:34%">What it costs</th><th>Remedy</th></tr></thead>
+    <tbody>
+      <tr><td class="k">API defined too late</td><td>FE blocked until BE is done</td><td>Contract before code, mock on day 1</td></tr>
+      <tr><td class="k">Spec skill is scarce</td><td>Few people can write a good spec</td><td>Template + Zod as the spec, senior reviews one PR</td></tr>
+      <tr><td class="k">PMs lack technical depth</td><td>Vague stories handed to juniors</td><td>PM owns the product half of the RFC, BE the contract half</td></tr>
+      <tr><td class="k">FE frustrated by delays</td><td>Idle time, rework at integration</td><td>Mock + generated types, contract tests stop drift</td></tr>
+      <tr><td class="k">No backend for the view</td><td>Screen cannot ship</td><td>Aggregate endpoint + resource endpoints (Part 2)</td></tr>
+    </tbody>
+  </table>
+  <div class="card warm" style="margin-top:26px;padding:16px 22px">
+    <p style="font-size:18px"><strong>Root cause:</strong> the API contract is a <em>by-product</em> of the implementation instead of its <em>input</em>.</p>
+  </div>
+</section>
+
+<!-- 4 -->
+<section class="slide" data-foot="Part 1 · Collaboration">
+  <div class="kicker">Serial vs parallel</div>
+  <h2>Move the contract to the front of the timeline</h2>
+  <svg viewBox="0 0 1136 420" width="1136" height="420" role="img" aria-label="Timeline comparing serial and contract-first delivery">
+    <defs>
+      <pattern id="hatch" width="8" height="8" patternUnits="userSpaceOnUse" patternTransform="rotate(45)">
+        <rect width="8" height="8" fill="#fbece5"/><line x1="0" y1="0" x2="0" y2="8" stroke="#e8b9a3" stroke-width="3"/>
+      </pattern>
+      <marker id="arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#5a6b67"/></marker>
+    </defs>
+    <text x="0" y="22" font-size="14" font-weight="650" fill="#5a6b67" letter-spacing="1.5">TODAY · SERIAL</text>
+    <g font-size="14" font-weight="600">
+      <rect x="0" y="40" width="130" height="46" rx="8" fill="#f3f6f5" stroke="#dbe3e0"/><text x="65" y="68" text-anchor="middle" fill="#0f201d">Design</text>
+      <rect x="140" y="40" width="300" height="46" rx="8" fill="#f3f6f5" stroke="#dbe3e0"/><text x="290" y="68" text-anchor="middle" fill="#0f201d">BE builds</text>
+      <rect x="450" y="40" width="130" height="46" rx="8" fill="#f3f6f5" stroke="#dbe3e0"/><text x="515" y="68" text-anchor="middle" fill="#0f201d">API shared</text>
+      <rect x="590" y="40" width="280" height="46" rx="8" fill="#f3f6f5" stroke="#dbe3e0"/><text x="730" y="68" text-anchor="middle" fill="#0f201d">FE builds</text>
+      <rect x="880" y="40" width="250" height="46" rx="8" fill="#fbece5" stroke="#f1d3c4"/><text x="1005" y="68" text-anchor="middle" fill="#b0522a">Integrate + fix mismatches</text>
+      <rect x="140" y="96" width="440" height="34" rx="8" fill="url(#hatch)" stroke="#f1d3c4"/><text x="360" y="118" text-anchor="middle" fill="#b0522a" font-size="13">FE waiting</text>
+    </g>
+
+    <line x1="0" y1="175" x2="1136" y2="175" stroke="#dbe3e0" stroke-dasharray="4 6"/>
+
+    <text x="0" y="215" font-size="14" font-weight="650" fill="#0d5c54" letter-spacing="1.5">CONTRACT-FIRST · PARALLEL</text>
+    <g font-size="14" font-weight="600">
+      <rect x="0" y="234" width="130" height="46" rx="8" fill="#f3f6f5" stroke="#dbe3e0"/><text x="65" y="262" text-anchor="middle" fill="#0f201d">Design</text>
+      <rect x="140" y="234" width="120" height="46" rx="8" fill="#e4f1ee" stroke="#c5e1db"/><text x="200" y="262" text-anchor="middle" fill="#083d38">Discovery</text>
+      <rect x="270" y="234" width="150" height="46" rx="8" fill="#e4f1ee" stroke="#c5e1db"/><text x="345" y="262" text-anchor="middle" fill="#083d38">Contract + mock</text>
+      <rect x="430" y="234" width="330" height="46" rx="8" fill="#f3f6f5" stroke="#dbe3e0"/><text x="595" y="262" text-anchor="middle" fill="#0f201d">FE builds on the mock</text>
+      <rect x="430" y="290" width="330" height="46" rx="8" fill="#f3f6f5" stroke="#dbe3e0"/><text x="595" y="318" text-anchor="middle" fill="#0f201d">BE implements the contract</text>
+      <rect x="770" y="260" width="110" height="52" rx="8" fill="#e6f3eb" stroke="#bfe0cb"/><text x="825" y="291" text-anchor="middle" fill="#2c7a4b">Integrate</text>
+    </g>
+    <line x1="890" y1="286" x2="1126" y2="286" stroke="#5a6b67" stroke-width="1.5" stroke-dasharray="5 5" marker-end="url(#arr)"/>
+    <text x="1008" y="276" text-anchor="middle" font-size="14" font-weight="650" fill="#2c7a4b">time back</text>
+    <text x="0" y="392" font-size="15" fill="#5a6b67">Integration becomes a base-URL switch, because both sides built against the same contract.</text>
+  </svg>
+</section>
+
+<!-- 5 -->
+<section class="slide" data-foot="Part 1 · Collaboration">
+  <div class="kicker">The workflow</div>
+  <h2>Five steps, each with an owner and an output</h2>
+  <div class="pipeline" style="margin-bottom:26px">
+    <div class="step hl"><b>1 · Discovery</b><span>30–45 min</span></div><div class="arrow">→</div>
+    <div class="step hl"><b>2 · Contract</b><span>Zod → OpenAPI</span></div><div class="arrow">→</div>
+    <div class="step hl"><b>3 · Mock</b><span>Prism, same day</span></div><div class="arrow">→</div>
+    <div class="step"><b>4 · Build</b><span>FE ∥ BE</span></div><div class="arrow">→</div>
+    <div class="step"><b>5 · Integrate</b><span>switch base URL</span></div>
+  </div>
+  <table>
+    <thead><tr><th style="width:17%">Step</th><th style="width:20%">Who</th><th style="width:31%">Output</th><th>Why it helps</th></tr></thead>
+    <tbody>
+      <tr><td class="k">Discovery</td><td>PM, FE, BE</td><td>Entities, states and actions from the wireframe</td><td>Shared vocabulary, so the PM doesn't need technical depth</td></tr>
+      <tr><td class="k">Contract</td><td>BE writes, FE approves</td><td>Contract PR: schemas, examples, errors</td><td>FE is a required reviewer (CODEOWNERS)</td></tr>
+      <tr><td class="k">Mock</td><td>Generated</td><td>Live mock with one example per UI state</td><td>FE builds every state, including empty and error</td></tr>
+      <tr><td class="k">Build</td><td>FE and BE</td><td>Handlers + UI against the same types</td><td>Tests validate responses against the contract</td></tr>
+      <tr><td class="k">Integrate</td><td>FE</td><td>Mock URL → real URL</td><td>No surprises, no "the field is called something else"</td></tr>
+    </tbody>
+  </table>
+</section>
+
+<!-- 6 -->
+<section class="slide" data-foot="Part 1 · Collaboration">
+  <div class="kicker">Scaling scarce spec skill</div>
+  <h2>A one-page RFC with clear owners</h2>
+  <div class="grid g-7-5 fill">
+    <div>
+      <table>
+        <thead><tr><th style="width:24%">Section</th><th style="width:18%">Owner</th><th>Content</th></tr></thead>
+        <tbody>
+          <tr><td class="k">Problem</td><td><span class="tag">PM</span></td><td>Who, why, and what "done" means</td></tr>
+          <tr><td class="k">Screen</td><td><span class="tag">PM</span></td><td>Wireframe, every element and action</td></tr>
+          <tr><td class="k">States</td><td><span class="tag">PM</span></td><td>Empty, error, and edge cases in plain words</td></tr>
+          <tr><td class="k">Contract</td><td><span class="tag warm">BE</span></td><td>Endpoints, fields, statuses, error codes</td></tr>
+          <tr><td class="k">Open Qs</td><td><span class="tag warm">BE</span></td><td>Decisions still needed, and who makes them</td></tr>
+          <tr><td class="k">Sign-off</td><td><span class="tag ok">FE</span></td><td>Approves the contract PR</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:16px">
+      <div class="card accent">
+        <h3>Definition of Ready</h3>
+        <p>A story enters the sprint only once its <strong>contract is merged</strong> and the <strong>mock is live</strong>.</p>
+      </div>
+      <div class="card">
+        <h3>Why this scales</h3>
+        <p>Less experienced devs fill in a known shape (a template and Zod). A senior reviews one PR instead of writing every spec.</p>
+      </div>
+      <div class="card warm">
+        <h3>Example from this case</h3>
+        <p>"5 400 / 10 000 kr": used or left? We settle it in discovery, not in code review.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 7 -->
+<section class="slide" data-foot="Part 1 · Collaboration">
+  <div class="kicker">Keeping the contract honest</div>
+  <h2>One source of truth, checked by machines</h2>
+  <svg viewBox="0 0 1136 300" width="1136" height="300" role="img" aria-label="Zod schemas generate OpenAPI which feeds the mock, FE types and CI">
+    <defs><marker id="a2" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#0d5c54"/></marker></defs>
+    <rect x="0" y="100" width="210" height="84" rx="10" fill="#0d5c54"/>
+    <text x="105" y="136" text-anchor="middle" font-size="18" font-weight="700" fill="#fff">Zod schemas</text>
+    <text x="105" y="160" text-anchor="middle" font-size="13" fill="#cfe7e1">source of truth</text>
+
+    <rect x="330" y="100" width="200" height="84" rx="10" fill="#e4f1ee" stroke="#c5e1db"/>
+    <text x="430" y="136" text-anchor="middle" font-size="18" font-weight="700" fill="#083d38">OpenAPI spec</text>
+    <text x="430" y="160" text-anchor="middle" font-size="13" fill="#0d5c54">generated, committed</text>
+    <line x1="212" y1="142" x2="326" y2="142" stroke="#0d5c54" stroke-width="2" marker-end="url(#a2)"/>
+    <text x="269" y="130" text-anchor="middle" font-size="11" fill="#5a6b67" class="mono">zod-openapi</text>
+
+    <g font-size="15">
+      <rect x="610" y="0" width="300" height="70" rx="10" fill="#f3f6f5" stroke="#dbe3e0"/>
+      <text x="628" y="30" font-weight="700" fill="#0f201d">Prism mock server</text>
+      <text x="628" y="52" font-size="13" fill="#5a6b67">FE builds today, one example per state</text>
+      <rect x="610" y="107" width="300" height="70" rx="10" fill="#f3f6f5" stroke="#dbe3e0"/>
+      <text x="628" y="137" font-weight="700" fill="#0f201d">Typed FE client</text>
+      <text x="628" y="159" font-size="13" fill="#5a6b67">openapi-typescript, no hand-copied types</text>
+      <rect x="610" y="214" width="300" height="70" rx="10" fill="#f3f6f5" stroke="#dbe3e0"/>
+      <text x="628" y="244" font-weight="700" fill="#0f201d">CI: oasdiff vs main</text>
+      <text x="628" y="266" font-size="13" fill="#5a6b67">fails on unannounced breaking change</text>
+    </g>
+    <path d="M532,142 C570,142 570,35 606,35" fill="none" stroke="#0d5c54" stroke-width="2" marker-end="url(#a2)"/>
+    <line x1="532" y1="142" x2="606" y2="142" stroke="#0d5c54" stroke-width="2" marker-end="url(#a2)"/>
+    <path d="M532,142 C570,142 570,249 606,249" fill="none" stroke="#0d5c54" stroke-width="2" marker-end="url(#a2)"/>
+
+    <rect x="0" y="232" width="530" height="52" rx="10" fill="#fff" stroke="#c5e1db" stroke-dasharray="5 4"/>
+    <text x="18" y="264" font-size="14" fill="#0f201d"><tspan font-weight="700">Runtime:</tspan> validate requests (400) · tests parse every response</text>
+    <line x1="105" y1="186" x2="105" y2="228" stroke="#0d5c54" stroke-width="2" marker-end="url(#a2)"/>
+
+    <text x="950" y="120" font-size="14" font-weight="700" fill="#0f201d">Frontend</text>
+    <text x="950" y="142" font-size="13" fill="#5a6b67">never waits,</text>
+    <text x="950" y="160" font-size="13" fill="#5a6b67">never guesses</text>
+  </svg>
+  <div class="grid g2" style="margin-top:22px">
+    <div class="card ok" style="background:var(--ok-soft);border-color:#bfe0cb;padding:14px 20px"><p class="small"><strong>Non-breaking:</strong> add an optional field, add an endpoint, add an enum value FE already handles.</p></div>
+    <div class="card warm" style="padding:14px 20px"><p class="small"><strong>Breaking:</strong> remove, rename, or retype a field; change status codes. Needs <code>/v2</code> or a deprecation window.</p></div>
+  </div>
+</section>
+
+<!-- 8 -->
+<section class="slide" data-foot="Part 1 · Collaboration">
+  <div class="kicker">Values and outcomes</div>
+  <h2>How this fits Qred, and how we'd know it works</h2>
+  <div class="grid g3">
+    <div class="card accent"><h3>Transparency</h3><ul class="clean small"><li>Agreement before code, written in the RFC</li><li>Contract, examples and errors visible to every team</li><li>Contract changelog in the same PR</li></ul></div>
+    <div class="card accent"><h3>Innovation</h3><ul class="clean small"><li>Mock and types generated from the spec</li><li>CI enforces the contract instead of trusting it</li><li>BFF: one consistent read for mobile</li></ul></div>
+    <div class="card accent"><h3>Passion</h3><ul class="clean small"><li>Own the dashboard journey, not a table</li><li>Treat FE idle time as a product defect</li><li>Care about developer experience and velocity</li></ul></div>
+  </div>
+  <h3 style="margin-top:30px">Measures of success</h3>
+  <table>
+    <tbody>
+      <tr><td class="k" style="width:40%">Design handoff → usable API for FE</td><td>days → <strong>hours</strong> (the mock)</td></tr>
+      <tr><td class="k">Contract changes after build starts</td><td>trending to <strong>zero</strong></td></tr>
+      <tr><td class="k">FE blocked time (retro)</td><td>tracked, and treated as a defect</td></tr>
+    </tbody>
+  </table>
+</section>
+
+<!-- 9 -->
+<section class="slide divider" data-foot="Part 2 · API">
+  <div class="kicker">Part 2</div>
+  <h1>The API behind the card view</h1>
+  <p class="lead" style="margin-top:18px;max-width:760px">Applying the same process to Appendix 1: wireframe → domain → contract → implementation.</p>
+</section>
+
+<!-- 10 -->
+<section class="slide" data-foot="Part 2 · API">
+  <div class="kicker">Discovery on the wireframe</div>
+  <h2>Every element maps to an entity or an action</h2>
+  <div class="grid" style="grid-template-columns:320px 1fr;gap:36px">
+    <div style="padding-left:34px">
+      <div class="phone">
+        <div class="row dim"><span>Logo</span><span>Menu</span></div>
+        <div class="row"><span class="badge">1</span><span>Company AB</span><span>⌄</span></div>
+        <div class="row" style="justify-content:center"><span class="badge">2</span><b>Invoice due ›</b></div>
+        <div class="row card-img"><span class="badge">3</span>Card image ›</div>
+        <div class="row" style="flex-direction:column;align-items:flex-start;gap:4px"><span class="badge">4</span><b>Remaining spend</b><span>5 400/10 000 kr ›</span><span style="align-self:flex-end;font-size:10px">based on your set limit</span></div>
+        <div class="row" style="flex-direction:column;align-items:stretch;gap:3px"><span class="badge">5</span><b>Latest transactions</b><span>Transaction · Data</span><span>Transaction · Data</span><span>Transaction · Data</span><span style="border:1px solid #1d2b28;padding:3px 5px;border-radius:4px;background:#fff">54 more items ›</span></div>
+        <div class="row btn"><span class="badge">6</span>Activate card</div>
+        <div class="row btn"><span class="badge">7</span>Contact Qred's support</div>
+      </div>
+    </div>
+    <table style="font-size:16px">
+      <thead><tr><th style="width:36%">Element</th><th style="width:30%">Domain</th><th>Payload</th></tr></thead>
+      <tbody>
+        <tr><td><span class="num">1</span>Company switcher</td><td>Company, Membership</td><td><code>company</code>, <code>companies[]</code></td></tr>
+        <tr><td><span class="num">2</span>Invoice due</td><td>Invoice (due / overdue)</td><td><code>invoiceDue | null</code></td></tr>
+        <tr><td><span class="num">3</span>Card image</td><td>Card, status</td><td><code>card | null</code></td></tr>
+        <tr><td><span class="num">4</span>5 400 / 10 000 kr</td><td>Spend limit, used this period</td><td><code>spend.used</code>, <code>spend.limit</code></td></tr>
+        <tr><td><span class="num">5</span>Latest + "54 more"</td><td>Transactions</td><td><code>latest[3]</code>, <code>totalCount</code></td></tr>
+        <tr><td><span class="num">6</span>Activate card</td><td>Card state change</td><td><code>actions.activateCard</code> + POST</td></tr>
+        <tr><td><span class="num">7</span>Contact support</td><td>Static link</td><td><code>actions.contactSupport.url</code></td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<!-- 11 -->
+<section class="slide" data-foot="Part 2 · API">
+  <div class="kicker">Domain model</div>
+  <h2>Relational Postgres: constraints, joins, one consistent read</h2>
+  <svg viewBox="0 0 1136 400" width="1136" height="400" role="img" aria-label="Entity relationship diagram">
+    <g stroke="#9fb0ab" stroke-width="1.6" fill="none">
+      <line x1="180" y1="70" x2="240" y2="70"/>
+      <line x1="470" y1="70" x2="530" y2="70"/>
+      <line x1="720" y1="70" x2="800" y2="70"/>
+      <path d="M625,120 V190 H150 V230"/>
+      <path d="M625,190 H440 V230"/>
+      <path d="M625,190 H790 V230"/>
+      <line x1="640" y1="310" x2="570" y2="310"/>
+    </g>
+    <path d="M1000,230 V168" stroke="#b0522a" stroke-width="1.8" stroke-dasharray="6 5" fill="none"/>
+    <text x="990" y="206" text-anchor="end" font-size="12.5" fill="#b0522a">nullable, set at cycle close</text>
+
+    <g class="mono" font-size="13">
+      <rect x="0" y="20" width="180" height="100" rx="8" fill="#fff" stroke="#c9d4d1"/>
+      <rect x="0" y="20" width="180" height="30" rx="8" fill="#0d5c54"/><rect x="0" y="40" width="180" height="10" fill="#0d5c54"/>
+      <text x="14" y="41" fill="#fff" font-weight="700">users</text>
+      <text x="14" y="74" fill="#0f201d">id</text><text x="14" y="96" fill="#0f201d">name</text>
+
+      <rect x="240" y="20" width="230" height="100" rx="8" fill="#fff" stroke="#c9d4d1"/>
+      <rect x="240" y="20" width="230" height="30" rx="8" fill="#0d5c54"/><rect x="240" y="40" width="230" height="10" fill="#0d5c54"/>
+      <text x="254" y="41" fill="#fff" font-weight="700">memberships  <tspan fill="#9fd8cc" font-weight="400">ACL</tspan></text>
+      <text x="254" y="74" fill="#0f201d">user_id, company_id</text><text x="254" y="96" fill="#0f201d">role</text>
+
+      <rect x="530" y="20" width="190" height="100" rx="8" fill="#fff" stroke="#c9d4d1"/>
+      <rect x="530" y="20" width="190" height="30" rx="8" fill="#0d5c54"/><rect x="530" y="40" width="190" height="10" fill="#0d5c54"/>
+      <text x="544" y="41" fill="#fff" font-weight="700">companies</text>
+      <text x="544" y="74" fill="#0f201d">id</text><text x="544" y="96" fill="#0f201d">name</text>
+
+      <rect x="800" y="20" width="336" height="148" rx="8" fill="#fff" stroke="#c9d4d1"/>
+      <rect x="800" y="20" width="336" height="30" rx="8" fill="#0d5c54"/><rect x="800" y="40" width="336" height="10" fill="#0d5c54"/>
+      <text x="814" y="41" fill="#fff" font-weight="700">invoices</text>
+      <text x="814" y="74" fill="#0f201d">company_id</text>
+      <text x="814" y="96" fill="#0f201d">period_start, period_end</text>
+      <text x="814" y="118" fill="#0f201d">due_date, status</text>
+      <text x="814" y="140" fill="#0f201d">amount_minor, currency</text>
+
+      <rect x="0" y="230" width="300" height="126" rx="8" fill="#fff" stroke="#c9d4d1"/>
+      <rect x="0" y="230" width="300" height="30" rx="8" fill="#0d5c54"/><rect x="0" y="250" width="300" height="10" fill="#0d5c54"/>
+      <text x="14" y="251" fill="#fff" font-weight="700">spend_limits</text>
+      <text x="14" y="284" fill="#0f201d">company_id  unique</text>
+      <text x="14" y="306" fill="#0f201d">amount_minor, currency</text>
+      <text x="14" y="328" fill="#0f201d">basis</text>
+
+      <rect x="330" y="230" width="240" height="148" rx="8" fill="#fff" stroke="#c9d4d1"/>
+      <rect x="330" y="230" width="240" height="30" rx="8" fill="#0d5c54"/><rect x="330" y="250" width="240" height="10" fill="#0d5c54"/>
+      <text x="344" y="251" fill="#fff" font-weight="700">cards</text>
+      <text x="344" y="284" fill="#0f201d">company_id, status</text>
+      <text x="344" y="306" fill="#0f201d">brand, last4</text>
+      <text x="344" y="328" fill="#0f201d">issued_at</text>
+      <text x="344" y="350" fill="#0f201d">activated_at</text>
+
+      <rect x="640" y="230" width="496" height="148" rx="8" fill="#fff" stroke="#c9d4d1"/>
+      <rect x="640" y="230" width="496" height="30" rx="8" fill="#0d5c54"/><rect x="640" y="250" width="496" height="10" fill="#0d5c54"/>
+      <text x="654" y="251" fill="#fff" font-weight="700">transactions</text>
+      <text x="654" y="284" fill="#0f201d">company_id, card_id</text>
+      <text x="654" y="306" fill="#0f201d">amount_minor, currency, merchant</text>
+      <text x="654" y="328" fill="#0f201d">occurred_at, status</text>
+      <text x="654" y="350" fill="#b0522a">invoice_id  null</text>
+    </g>
+  </svg>
+  <div class="grid g3" style="margin-top:10px;gap:18px">
+    <p class="small"><strong>Money</strong> as integer öre + currency. No floats, no formatted strings.</p>
+    <p class="small"><strong>No PAN</strong> stored, last4 only. Index on <code>(company_id, occurred_at desc, id desc)</code>.</p>
+    <p class="small"><strong>Used spend</strong> is computed from rows, never stored, so it can't drift.</p>
+  </div>
+</section>
+
+<!-- 12 -->
+<section class="slide" data-foot="Part 2 · API">
+  <div class="kicker">The distinction that matters</div>
+  <h2>Transactions, spend and invoice are three different things</h2>
+  <table>
+    <thead><tr><th style="width:18%"></th><th style="width:27%">Transaction</th><th style="width:27%">Spend (widget)</th><th>Invoice (banner)</th></tr></thead>
+    <tbody>
+      <tr><td class="k">What</td><td>One ledger entry</td><td>Used this period vs the user-set limit</td><td>Monthly statement</td></tr>
+      <tr><td class="k">When it exists</td><td>As soon as it happens</td><td>Computed on every read</td><td>When the billing cycle <strong>closes</strong></td></tr>
+      <tr><td class="k">Source</td><td>Row</td><td><code>SUM</code> of this period's rows, excluding reversed</td><td>Row; txns get <code>invoice_id</code> at close</td></tr>
+      <tr><td class="k">On home</td><td>Latest 3, <strong>all</strong> statuses</td><td>5 400 / 10 000 kr</td><td>Oldest unpaid, or <code>null</code></td></tr>
+    </tbody>
+  </table>
+  <div class="card warm" style="margin-top:28px">
+    <p><strong>Common mistake:</strong> treating the home list as "lines on the current invoice". A purchase made today is on the home screen now, but only on an invoice after the cycle closes. So the dashboard never filters by <code>invoice_id</code>.</p>
+  </div>
+</section>
+
+<!-- 13 -->
+<section class="slide" data-foot="Part 2 · API">
+  <div class="kicker">API structure</div>
+  <h2>Everything scoped under the company</h2>
+  <table style="font-size:16px">
+    <thead><tr><th style="width:8%"></th><th style="width:52%">Path under <code>/api/v1</code></th><th>Serves</th></tr></thead>
+    <tbody>
+      <tr><td><span class="method get">GET</span></td><td class="mono">/companies</td><td>Company switcher</td></tr>
+      <tr><td><span class="method get">GET</span></td><td class="mono"><strong>/companies/:companyId/dashboard</strong></td><td><strong>The whole home screen, one call</strong></td></tr>
+      <tr><td><span class="method get">GET</span></td><td class="mono">/companies/:companyId/cards/:cardId</td><td>Card chevron</td></tr>
+      <tr><td><span class="method post">POST</span></td><td class="mono">/companies/:companyId/cards/:cardId/activate</td><td>Activate card, idempotent</td></tr>
+      <tr><td><span class="method get">GET</span></td><td class="mono">/companies/:companyId/invoices/:invoiceId</td><td>Invoice-due chevron</td></tr>
+      <tr><td><span class="method get">GET</span></td><td class="mono">/companies/:companyId/transactions?cursor&amp;limit</td><td>"54 more items" (keyset cursor)</td></tr>
+    </tbody>
+  </table>
+  <div class="grid g3" style="margin-top:24px;gap:18px">
+    <div class="card" style="padding:16px 18px"><p class="small"><strong>One membership check</strong> on <code>:companyId</code> guards the whole tree → 403.</p></div>
+    <div class="card" style="padding:16px 18px"><p class="small"><strong>Foreign ids → 404</strong>: a card from another company doesn't leak that it exists.</p></div>
+    <div class="card" style="padding:16px 18px"><p class="small"><strong>One error shape</strong>: <code>{ error: { code, message } }</code>, and 400/401/403/404/409.</p></div>
+  </div>
+</section>
+
+<!-- 14 -->
+<section class="slide" data-foot="Part 2 · API">
+  <div class="kicker">Why an aggregate endpoint</div>
+  <h2>A BFF for mobile: one round-trip, one snapshot</h2>
+  <svg viewBox="0 0 1136 260" width="1136" height="260" role="img" aria-label="Five calls versus one aggregate call">
+    <defs><marker id="a3" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#8a9894"/></marker>
+    <marker id="a4" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#0d5c54"/></marker></defs>
+    <text x="0" y="16" font-size="13" font-weight="650" fill="#b0522a" letter-spacing="1.3">WITHOUT · 5 CALLS</text>
+    <rect x="0" y="90" width="70" height="120" rx="14" fill="#fff" stroke="#1d2b28" stroke-width="3"/>
+    <g stroke="#8a9894" stroke-width="1.5" marker-end="url(#a3)">
+      <line x1="74" y1="115" x2="236" y2="45"/><line x1="74" y1="130" x2="236" y2="95"/><line x1="74" y1="150" x2="236" y2="145"/><line x1="74" y1="170" x2="236" y2="195"/><line x1="74" y1="185" x2="236" y2="245"/>
+    </g>
+    <g font-size="13" class="mono" fill="#0f201d">
+      <rect x="240" y="30" width="230" height="30" rx="6" fill="#f3f6f5" stroke="#dbe3e0"/><text x="252" y="50">/companies</text>
+      <rect x="240" y="80" width="230" height="30" rx="6" fill="#f3f6f5" stroke="#dbe3e0"/><text x="252" y="100">/invoices?status=due</text>
+      <rect x="240" y="130" width="230" height="30" rx="6" fill="#f3f6f5" stroke="#dbe3e0"/><text x="252" y="150">/cards</text>
+      <rect x="240" y="180" width="230" height="30" rx="6" fill="#f3f6f5" stroke="#dbe3e0"/><text x="252" y="200">/spend</text>
+      <rect x="240" y="230" width="230" height="30" rx="6" fill="#f3f6f5" stroke="#dbe3e0"/><text x="252" y="250">/transactions?limit=3</text>
+    </g>
+
+    <line x1="540" y1="10" x2="540" y2="260" stroke="#dbe3e0" stroke-dasharray="4 6"/>
+
+    <text x="610" y="16" font-size="13" font-weight="650" fill="#0d5c54" letter-spacing="1.3">WITH BFF · 1 CALL</text>
+    <rect x="610" y="90" width="70" height="120" rx="14" fill="#fff" stroke="#1d2b28" stroke-width="3"/>
+    <line x1="684" y1="150" x2="756" y2="150" stroke="#0d5c54" stroke-width="2.5" marker-end="url(#a4)"/>
+    <rect x="760" y="115" width="170" height="70" rx="10" fill="#0d5c54"/>
+    <text x="845" y="146" text-anchor="middle" font-size="15" font-weight="700" fill="#fff">/dashboard</text>
+    <text x="845" y="167" text-anchor="middle" font-size="12" fill="#cfe7e1">service composes</text>
+    <line x1="934" y1="150" x2="986" y2="150" stroke="#0d5c54" stroke-width="2.5" marker-end="url(#a4)"/>
+    <rect x="990" y="95" width="146" height="110" rx="10" fill="#e4f1ee" stroke="#c5e1db"/>
+    <text x="1063" y="130" text-anchor="middle" font-size="14" font-weight="700" fill="#083d38">Postgres</text>
+    <text x="1063" y="154" text-anchor="middle" font-size="12" fill="#0d5c54">1 read-only txn</text>
+    <text x="1063" y="172" text-anchor="middle" font-size="12" fill="#0d5c54">REPEATABLE READ</text>
+  </svg>
+  <div class="grid g2" style="margin-top:22px;gap:20px">
+    <ul class="clean small">
+      <li><strong>Network:</strong> one request on a mobile connection</li>
+      <li><strong>Consistency:</strong> used spend and latest txns come from the same snapshot</li>
+    </ul>
+    <ul class="clean small">
+      <li><strong>Decoupling:</strong> FE isn't tied to our internal resource split</li>
+      <li><strong>Server-driven UI:</strong> BE decides <code>actions.activateCard.enabled</code></li>
+    </ul>
+  </div>
+</section>
+
+<!-- 15 -->
+<section class="slide" data-foot="Part 2 · API">
+  <div class="kicker">Payload</div>
+  <h2>Shaped for the screen, not the tables</h2>
+  <div class="grid g-7-5 fill" style="gap:30px">
+<pre id="payload">{
+  "asOf": "2026-09-27T10:00:00Z",
+  "company": { "id": "cmp_1", "name": "Company AB" },
+  "companies": [ … ],
+  "invoiceDue": { "id": "inv_1", "status": "due",
+    "dueDate": "2026-09-30",
+    "amount": { "minor": 312000, "currency": "SEK" } },
+  "card": { "id": "crd_1", "status": "pending_activation",
+    "brand": "VISA", "last4": "4242",
+    "requiresActivation": true },
+  "spend": {
+    "limit":     { "minor": 1000000, "currency": "SEK" },
+    "used":      { "minor": 540000,  "currency": "SEK" },
+    "remaining": { "minor": 460000,  "currency": "SEK" },
+    "basis": "user_set_limit" },
+  "transactions": { "latest": [ … 3 … ],
+    "previewSize": 3, "totalCount": 57, "remainingCount": 54 },
+  "actions": {
+    "activateCard":   { "enabled": true },
+    "contactSupport": { "enabled": true, "url": "…" } }
+}</pre>
+    <div style="display:flex;flex-direction:column;gap:14px">
+      <div class="card" style="padding:16px 20px"><h3>Money is an object</h3><p class="small"><code>{ minor, currency }</code>. FE formats it with <code>Intl.NumberFormat</code>.</p></div>
+      <div class="card" style="padding:16px 20px"><h3>Empty states are in the contract</h3><p class="small"><code>invoiceDue</code>, <code>card</code> and <code>spend</code> can be <code>null</code>; <code>latest</code> can be <code>[]</code>.</p></div>
+      <div class="card" style="padding:16px 20px"><h3>No maths on the client</h3><p class="small"><code>remaining</code> and <code>remainingCount</code> are computed server-side.</p></div>
+      <div class="card accent" style="padding:16px 20px"><h3>Actions, not status checks</h3><p class="small">FE renders <code>enabled</code>. Rules stay in one place.</p></div>
+    </div>
+  </div>
+</section>
+
+<!-- 16 -->
+<section class="slide" data-foot="Part 2 · API">
+  <div class="kicker">Code structure</div>
+  <h2>Thin controllers, rules in services, SQL in repos</h2>
+  <div class="pipeline" style="margin-bottom:28px">
+    <div class="step"><b>Auth</b><span>Bearer → userId</span></div><div class="arrow">→</div>
+    <div class="step"><b>Membership</b><span>:companyId → 403</span></div><div class="arrow">→</div>
+    <div class="step"><b>Validate</b><span>Zod → 400</span></div><div class="arrow">→</div>
+    <div class="step hl"><b>Controller</b><span>HTTP only</span></div><div class="arrow">→</div>
+    <div class="step hl"><b>Service</b><span>business rules</span></div><div class="arrow">→</div>
+    <div class="step hl"><b>Repository</b><span>Knex SQL</span></div><div class="arrow">→</div>
+    <div class="step"><b>Postgres</b><span>18</span></div>
+  </div>
+  <div class="grid g2" style="gap:36px">
+    <table style="font-size:16px">
+      <thead><tr><th style="width:36%">Choice</th><th>Why</th></tr></thead>
+      <tbody>
+        <tr><td class="k">TypeScript, ESM</td><td>Strict types end to end</td></tr>
+        <tr><td class="k">Express 5</td><td>Native async errors, no wrappers</td></tr>
+        <tr><td class="k">Knex</td><td>Explicit SQL, transactions, no ORM magic</td></tr>
+        <tr><td class="k">Zod + zod-openapi</td><td>One schema: validation, types, and spec</td></tr>
+        <tr><td class="k">node:test</td><td>Built into Node, zero extra runner</td></tr>
+      </tbody>
+    </table>
+<pre style="font-size:13.5px;padding:18px 22px">src/
+  http/        <span class="c">auth · membership · validate · errors</span>
+  modules/
+    dashboard/ <span class="c">schema · routes · controller</span>
+               <span class="c">service · repo</span>
+    cards/  invoices/  transactions/  companies/
+  db/          <span class="c">migrations · migrate · seed</span>
+  openapi/     <span class="c">document · write-spec</span>
+docs/          <span class="c">openapi.json · RFC · CHANGELOG</span></pre>
+  </div>
+</section>
+
+<!-- 17 -->
+<section class="slide" data-foot="Part 2 · API">
+  <div class="kicker">Details that make it production-minded</div>
+  <h2>Correctness under real conditions</h2>
+  <div class="grid g2" style="gap:22px">
+    <div class="card"><h3>Idempotent activation</h3><p class="small">One conditional statement:<br><code>UPDATE … WHERE status='pending_activation'</code><br>A double tap → 200 with the same body. Blocked → 409.</p></div>
+    <div class="card"><h3>Keyset pagination</h3><p class="small">Opaque cursor <code>(occurred_at, id)</code>. Stable under inserts, O(log n) with the index, unlike <code>OFFSET</code>.</p></div>
+    <div class="card"><h3>Snapshot reads</h3><p class="small">Dashboard queries share one read-only REPEATABLE READ transaction, so the numbers never disagree.</p></div>
+    <div class="card"><h3>Demo that never breaks</h3><p class="small">Seed dates are relative to <em>now</em>, so the view matches on any day. Tests run on a real Postgres via Testcontainers.</p></div>
+  </div>
+</section>
+
+<!-- 18 -->
+<section class="slide" data-foot="Part 2 · API">
+  <div class="kicker">Testing</div>
+  <h2>Integration tests against a real database</h2>
+  <div class="grid g-7-5" style="gap:32px">
+    <table style="font-size:16px">
+      <thead><tr><th style="width:62%">Scenario</th><th>Expect</th></tr></thead>
+      <tbody>
+        <tr><td>Dashboard for Company AB</td><td>5 400 / 10 000, 57 / 54, invoice due</td></tr>
+        <tr><td>No or bad token</td><td>401</td></tr>
+        <tr><td>Company without membership</td><td>403</td></tr>
+        <tr><td>Other company's card id</td><td>404</td></tr>
+        <tr><td>Activate → dashboard</td><td>active, action disabled</td></tr>
+        <tr><td>Activate twice</td><td>200 · same <code>activatedAt</code></td></tr>
+        <tr><td>Page through transactions</td><td>57 unique, ordered</td></tr>
+        <tr><td>Company with nothing due</td><td><code>invoiceDue: null</code></td></tr>
+      </tbody>
+    </table>
+    <div style="display:flex;flex-direction:column;gap:16px">
+      <div class="card accent"><h3>Contract check in every test</h3><p class="small">Each 200 body is <code>parse</code>d with its Zod response schema. If the implementation drifts from the spec, the test fails.</p></div>
+      <div class="card"><h3>Isolation</h3><p class="small">One Postgres 18 container per file, reseeded before each test. No shared state with the dev DB.</p></div>
+    </div>
+  </div>
+</section>
+
+<!-- 19 -->
+<section class="slide" data-foot="Demo">
+  <div class="kicker">Demo</div>
+  <h2>What I'll show</h2>
+  <div class="grid g2" style="gap:32px">
+<pre style="font-size:14px"><span class="c"># run</span>
+docker compose up -d
+npm run migrate &amp;&amp; npm run seed
+npm run dev
+
+<span class="c"># home screen</span>
+GET  /companies/cmp_1/dashboard
+<span class="c"># activate, twice</span>
+POST /companies/cmp_1/cards/crd_1/activate
+<span class="c"># access control</span>
+GET  /companies/cmp_3/dashboard   <span class="b">403</span>
+
+<span class="c"># FE view: mock from the spec</span>
+npm run openapi &amp;&amp; npm run mock</pre>
+    <ol style="padding-left:22px">
+      <li style="margin-bottom:12px">Dashboard matches the wireframe number for number</li>
+      <li style="margin-bottom:12px">Activate: the button flag flips; the second call is still 200</li>
+      <li style="margin-bottom:12px">Switch to <em>Other AB</em>: no invoice, banner hidden</li>
+      <li style="margin-bottom:12px">Stranger company: 403 with the shared error shape</li>
+      <li style="margin-bottom:12px">Same responses from the Prism mock, before any handler existed</li>
+      <li>Git log: contract commit lands before the handlers</li>
+    </ol>
+  </div>
+</section>
+
+<!-- 20 -->
+<section class="slide" data-foot="Further work">
+  <div class="kicker">With more time</div>
+  <h2>Next steps</h2>
+  <table style="font-size:16px">
+    <thead><tr><th style="width:26%">Area</th><th style="width:42%">What</th><th>Why</th></tr></thead>
+    <tbody>
+      <tr><td class="k">Authorization</td><td>Role-based actions (owner/admin activate) + audit row</td><td>Least privilege, traceability</td></tr>
+      <tr><td class="k">Activation</td><td>Verification code / last4 check</td><td>Prove physical possession</td></tr>
+      <tr><td class="k">Contract CI</td><td>oasdiff on every PR; Pact if consumers multiply</td><td>Breaking changes caught before merge</td></tr>
+      <tr><td class="k">Spend accuracy</td><td>Include processor authorisation holds</td><td>Pending card auths reduce spend immediately</td></tr>
+      <tr><td class="k">Periods</td><td>Europe/Stockholm billing cycles, per-card limits</td><td>Correct month boundaries</td></tr>
+      <tr><td class="k">Transactions</td><td>Filters: date, card, status</td><td>The "54 more" view</td></tr>
+      <tr><td class="k">Platform</td><td>OIDC, rate limits, ETag, structured logs + tracing</td><td>Production hardening</td></tr>
+    </tbody>
+  </table>
+</section>
+
+<!-- 21 -->
+<section class="slide title-slide" data-foot="Thank you">
+  <div class="kicker">Thank you</div>
+  <h1>Questions?</h1>
+  <p class="lead" style="margin-top:18px;max-width:760px">Contract first. The frontend never waits, and the backend never guesses.</p>
+</section>
+
+</div>
+
+<div class="chrome"><div class="bar" id="bar"></div></div>
+<div class="counter" id="counter"></div>
+<div class="hint">← → to navigate · F for fullscreen</div>
+
+<script>
+(() => {
+  const stage = document.getElementById('stage')
+  const slides = [...document.querySelectorAll('.slide')]
+  const bar = document.getElementById('bar')
+  const counter = document.getElementById('counter')
+  let i = 0
+
+  const payload = document.getElementById('payload')
+  payload.innerHTML = payload.innerHTML
+    .replace(/("[^"]*")(\s*:)/g, '<span class="k">$1</span>$2')
+    .replace(/(:\s*)("[^"]*")/g, '$1<span class="s">$2</span>')
+    .replace(/\b(\d+)\b(?![^<]*<\/span>)/g, '<span class="n">$1</span>')
+    .replace(/\b(true|false|null)\b/g, '<span class="b">$1</span>')
+
+  function fit() {
+    const s = Math.min(innerWidth / 1320, innerHeight / 760)
+    stage.style.transform = `translate(-50%, -50%) scale(${s})`
+  }
+
+  function show(n) {
+    i = Math.max(0, Math.min(slides.length - 1, n))
+    slides.forEach((el, k) => el.classList.toggle('active', k === i))
+    bar.style.width = `${((i + 1) / slides.length) * 100}%`
+    counter.textContent = `${i + 1} / ${slides.length}`
+    history.replaceState(null, '', `#${i + 1}`)
+  }
+
+  addEventListener('keydown', (e) => {
+    if (['ArrowRight', 'PageDown', ' ', 'Enter'].includes(e.key)) { e.preventDefault(); show(i + 1) }
+    else if (['ArrowLeft', 'PageUp', 'Backspace'].includes(e.key)) { e.preventDefault(); show(i - 1) }
+    else if (e.key === 'Home') show(0)
+    else if (e.key === 'End') show(slides.length - 1)
+    else if (e.key === 'f' || e.key === 'F') {
+      document.fullscreenElement ? document.exitFullscreen() : document.documentElement.requestFullscreen()
+    }
+  })
+
+  let x0 = null
+  addEventListener('touchstart', (e) => { x0 = e.touches[0].clientX }, { passive: true })
+  addEventListener('touchend', (e) => {
+    if (x0 === null) return
+    const dx = e.changedTouches[0].clientX - x0
+    if (Math.abs(dx) > 40) show(i + (dx < 0 ? 1 : -1))
+    x0 = null
+  })
+
+  addEventListener('resize', fit)
+  fit()
+  show((parseInt(location.hash.slice(1), 10) || 1) - 1)
+})()
+</script>
+</body>
+</html>
