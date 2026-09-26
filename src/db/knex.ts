@@ -9,8 +9,7 @@ export function createDb(connection: string): Knex {
   })
 }
 
-const connectionString = `postgresql://${config.postgres.user}:${config.postgres.password}@${config.postgres.host}:${config.postgres.port}/${config.postgres.database}`
-export const db = createDb(connectionString)
+export const db = createDb(config.databaseUrl)
 
 export async function pingDb(client: Knex = db): Promise<void> {
   await client.raw('select 1 as ok')

@@ -1,12 +1,18 @@
 import 'dotenv/config'
+import { z } from 'zod'
+
+const env = z
+  .object({
+    PORT: z.coerce.number().int().positive().default(3000),
+    POSTGRES_HOST: z.string().default('localhost'),
+    POSTGRES_PORT: z.coerce.number().int().positive().default(5432),
+    POSTGRES_USER: z.string().default('qred'),
+    POSTGRES_PASSWORD: z.string().default('qred'),
+    POSTGRES_DB: z.string().default('qred_card'),
+  })
+  .parse(process.env)
 
 export const config = {
-  port: Number(process.env.PORT ?? 3000),
-  postgres: {
-    host: process.env.POSTGRES_HOST ?? 'localhost',
-    port: Number(process.env.POSTGRES_PORT ?? 5432),
-    user: process.env.POSTGRES_USER ?? 'qred',
-    password: process.env.POSTGRES_PASSWORD ?? 'qred',
-    database: process.env.POSTGRES_DB ?? 'qred_card',
-  },
+  port: env.PORT,
+  databaseUrl: `postgresql://${env.POSTGRES_USER}:${env.POSTGRES_PASSWORD}@${env.POSTGRES_HOST}:${env.POSTGRES_PORT}/${env.POSTGRES_DB}`,
 }
