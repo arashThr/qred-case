@@ -15,7 +15,8 @@
     "test": "tsx --test 'src/**/*.test.ts' 'tests/**/*.test.ts'",
     "lint": "eslint src tests",
     "format": "prettier --write src tests",
-    "format:check": "prettier --check src tests"
+    "format:check": "prettier --check src tests",
+    "openapi": "tsx src/openapi/write-spec.ts"
   },
   "keywords": [],
   "author": "",
