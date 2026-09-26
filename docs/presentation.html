@@ -372,7 +372,7 @@ svg .mono { font-family: var(--mono); }
         <tr><td><span class="num">4</span>5 400 / 10 000 kr</td><td>Spend limit, used this period</td><td><code>spend.used</code>, <code>spend.limit</code></td></tr>
         <tr><td><span class="num">5</span>Latest + "54 more"</td><td>Transactions</td><td><code>latest[3]</code>, <code>totalCount</code></td></tr>
         <tr><td><span class="num">6</span>Activate card</td><td>Card state change</td><td><code>actions.activateCard</code> + POST</td></tr>
-        <tr><td><span class="num">7</span>Contact support</td><td>Static link</td><td><code>actions.contactSupport.url</code></td></tr>
+        <tr><td><span class="num">7</span>Contact support</td><td>App-owned link</td><td>not in the API</td></tr>
       </tbody>
     </table>
   </div>
@@ -549,18 +549,15 @@ svg .mono { font-family: var(--mono); }
     "dueDate": "2026-09-30",
     "amount": { "minor": 312000, "currency": "SEK" } },
   "card": { "id": "crd_1", "status": "pending_activation",
-    "brand": "VISA", "last4": "4242",
-    "requiresActivation": true },
+    "brand": "VISA", "last4": "4242", "activatedAt": null },
   "spend": {
     "limit":     { "minor": 1000000, "currency": "SEK" },
     "used":      { "minor": 540000,  "currency": "SEK" },
     "remaining": { "minor": 460000,  "currency": "SEK" },
     "basis": "user_set_limit" },
   "transactions": { "latest": [ … 3 … ],
-    "previewSize": 3, "totalCount": 57, "remainingCount": 54 },
-  "actions": {
-    "activateCard":   { "enabled": true },
-    "contactSupport": { "enabled": true, "url": "…" } }
+    "totalCount": 57, "remainingCount": 54 },
+  "actions": { "activateCard": { "enabled": true } }
 }</pre>
     <div style="display:flex;flex-direction:column;gap:14px">
       <div class="card" style="padding:16px 20px"><h3>Money is an object</h3><p class="small"><code>{ minor, currency }</code>. FE formats it with <code>Intl.NumberFormat</code>.</p></div>

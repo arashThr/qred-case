@@ -119,7 +119,7 @@ BFF/aggregator: one round-trip and one point-in-time read (a single read-only RE
 `GET /api/v1/companies/:companyId/dashboard`
 
 The server makes the business decisions (used and remaining amounts, which actions are enabled). The FE only renders and formats (`Intl.NumberFormat` for "5 400 kr").
-Card artwork is a FE asset chosen by `brand`; the API does not send image URLs.
+Card artwork and the support link are FE-owned: artwork is chosen by `brand`, and the API sends neither image URLs nor the support URL.
 
 Demo auth: `Authorization: Bearer demo`. Production: session/OIDC + a membership check on companyId.
 
@@ -144,7 +144,7 @@ Sample:
     "status": "pending_activation",
     "brand": "VISA",
     "last4": "4242",
-    "requiresActivation": true
+    "activatedAt": null
   },
   "spend": {
     "limit": { "minor": 1000000, "currency": "SEK" },
@@ -162,13 +162,11 @@ Sample:
         "status": "pending"
       }
     ],
-    "previewSize": 3,
     "totalCount": 57,
     "remainingCount": 54
   },
   "actions": {
-    "activateCard": { "enabled": true },
-    "contactSupport": { "enabled": true, "url": "https://support.qred.se" }
+    "activateCard": { "enabled": true }
   }
 }
 ```
