@@ -75,7 +75,7 @@ users           id, name
 companies       id, name
 memberships     user_id, company_id, role                         PK(user_id, company_id)
 cards           id, company_id, status, brand, last4, issued_at, activated_at
-spend_limits    id, company_id, amount_minor, currency, basis      basis = user_set_limit | credit_limit
+spend_limits    company_id (PK), amount_minor, currency, basis   basis = user_set_limit | credit_limit
 invoices        id, company_id, period_start, period_end, due_date, amount_minor, currency, status
 transactions    id, company_id, card_id, amount_minor, currency, merchant, occurred_at, status, invoice_id
 ```
