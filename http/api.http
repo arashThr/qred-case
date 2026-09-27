@@ -1,2 +1,49 @@
+@base = http://localhost:3000/api/v1
+@auth = Bearer demo
+
 # Ping
 GET http://localhost:3000/health
+
+###
+# Company switcher
+GET {{base}}/companies
+Authorization: {{auth}}
+
+###
+# Home screen
+GET {{base}}/companies/cmp_1/dashboard
+Authorization: {{auth}}
+
+###
+# Activate card (run twice: still 200)
+POST {{base}}/companies/cmp_1/cards/crd_1/activate
+Authorization: {{auth}}
+
+###
+# Card details
+GET {{base}}/companies/cmp_1/cards/crd_1
+Authorization: {{auth}}
+
+###
+# Invoice details
+GET {{base}}/companies/cmp_1/invoices/inv_1
+Authorization: {{auth}}
+
+###
+# Transactions, first page (pass nextCursor as ?cursor= for the next one)
+GET {{base}}/companies/cmp_1/transactions?limit=20
+Authorization: {{auth}}
+
+###
+# No invoice due
+GET {{base}}/companies/cmp_2/dashboard
+Authorization: {{auth}}
+
+###
+# Not a member: 403
+GET {{base}}/companies/cmp_3/dashboard
+Authorization: {{auth}}
+
+###
+# No token: 401
+GET {{base}}/companies/cmp_1/dashboard
