@@ -31,6 +31,7 @@ describe('migrations and seed', () => {
     new Date('2026-09-27T10:00:00Z'),
     new Date('2026-10-01T00:05:00Z'),
     new Date('2026-12-31T23:59:00Z'),
+    new Date('2027-01-01T00:05:00Z'),
   ]) {
     it(`matches the wireframe when seeded at ${now.toISOString()}`, async () => {
       await seed(client, now)
