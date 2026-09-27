@@ -16,6 +16,7 @@ export const notFound: RequestHandler = () => {
   throw new AppError(404, 'ROUTE_NOT_FOUND', 'Route not found')
 }
 
+// Express recognises error middleware by its four parameters, so _next must stay.
 export const errorHandler: ErrorRequestHandler = (err, _req, res, _next) => {
   let status = 500
   let body: ErrorResponse = {
