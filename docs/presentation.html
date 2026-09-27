@@ -133,11 +133,10 @@ svg .mono { font-family: var(--mono); }
 <section class="slide title-slide" data-foot="Node.js Backend Developer · Case study 2026">
   <div class="kicker">Qred case study</div>
   <h1>Card Dashboard API</h1>
-  <p class="lead" style="margin-top:18px;max-width:780px">Contract-first delivery, so frontend and backend ship in parallel. And the API behind the mobile card view.</p>
+  <p class="lead" style="margin-top:18px;max-width:820px">A proposal for contract-first delivery: faster, more effective collaboration between teams. And the API behind the mobile card view.</p>
   <p style="margin-top:56px;font-size:18px;color:#cfe7e1">Arash Taher</p>
 </section>
 
-<!-- 2 -->
 <section class="slide" data-foot="Agenda">
   <div class="kicker">Agenda</div>
   <h2>Two parts, one idea: agree on the contract first</h2>
@@ -145,137 +144,171 @@ svg .mono { font-family: var(--mono); }
     <div class="card accent">
       <span class="tag">Part 1 · ~10 min</span>
       <h3 style="margin-top:14px">Collaboration</h3>
-      <ul class="clean small"><li>What is actually slowing us down</li><li>A contract-first workflow</li><li>Scaling scarce spec skill</li><li>Fit with Qred's values</li></ul>
+      <ul class="clean small"><li>The problem and its root cause</li><li>Contract-first workflow</li><li>The RFC and the tooling</li><li>What changes, and Qred's values</li></ul>
     </div>
     <div class="card">
       <span class="tag">Part 2 · ~10 min</span>
       <h3 style="margin-top:14px">API design</h3>
-      <ul class="clean small"><li>From wireframe to domain</li><li>Schema and payload</li><li>BFF aggregate endpoint</li><li>Code structure and tests</li></ul>
+      <ul class="clean small"><li>From wireframe to domain</li><li>Schema and payload</li><li>Aggregate endpoint</li><li>Code, tests and CI</li></ul>
     </div>
     <div class="card">
       <span class="tag">Demo · ~8 min</span>
       <h3 style="margin-top:14px">Live</h3>
-      <ul class="clean small"><li>Dashboard read</li><li>Activate card, idempotent</li><li>Access control</li><li>Mock server from the spec</li></ul>
+      <ul class="clean small"><li>Dashboard read</li><li>Activate card, twice</li><li>Access control</li><li>Mock server from the spec</li></ul>
     </div>
   </div>
 </section>
 
-<!-- 3 -->
 <section class="slide" data-foot="Part 1 · Collaboration">
   <div class="kicker">The problem</div>
-  <h2>Five symptoms, one root cause</h2>
-  <table>
-    <thead><tr><th style="width:28%">From the brief</th><th style="width:34%">What it costs</th><th>Remedy</th></tr></thead>
-    <tbody>
-      <tr><td class="k">API defined too late</td><td>FE blocked until BE is done</td><td>Contract before code, mock on day 1</td></tr>
-      <tr><td class="k">Spec skill is scarce</td><td>Few people can write a good spec</td><td>Template + Zod as the spec, senior reviews one PR</td></tr>
-      <tr><td class="k">PMs lack technical depth</td><td>Vague stories handed to juniors</td><td>PM owns the product half of the RFC, BE the contract half</td></tr>
-      <tr><td class="k">FE frustrated by delays</td><td>Idle time, rework at integration</td><td>Mock + generated types, contract tests stop drift</td></tr>
-      <tr><td class="k">No backend for the view</td><td>Screen cannot ship</td><td>Aggregate endpoint + resource endpoints (Part 2)</td></tr>
-    </tbody>
-  </table>
-  <div class="card warm" style="margin-top:26px;padding:16px 22px">
-    <p style="font-size:18px"><strong>Root cause:</strong> the API contract is a <em>by-product</em> of the implementation instead of its <em>input</em>.</p>
+  <h2>Today, the frontend waits for the backend</h2>
+  <svg viewBox="0 0 1136 200" width="1136" height="200" role="img" aria-label="Serial delivery timeline with the frontend waiting">
+    <defs>
+      <pattern id="hatchA" width="8" height="8" patternUnits="userSpaceOnUse" patternTransform="rotate(45)">
+        <rect width="8" height="8" fill="#fbece5"/><line x1="0" y1="0" x2="0" y2="8" stroke="#e8b9a3" stroke-width="3"/>
+      </pattern>
+    </defs>
+    <g font-size="16" font-weight="600">
+      <rect x="0" y="20" width="140" height="56" rx="10" fill="#f3f6f5" stroke="#dbe3e0"/><text x="70" y="54" text-anchor="middle" fill="#0f201d">Design</text>
+      <rect x="152" y="20" width="300" height="56" rx="10" fill="#f3f6f5" stroke="#dbe3e0"/><text x="302" y="54" text-anchor="middle" fill="#0f201d">BE designs + builds</text>
+      <rect x="464" y="20" width="130" height="56" rx="10" fill="#f3f6f5" stroke="#dbe3e0"/><text x="529" y="54" text-anchor="middle" fill="#0f201d">API shared</text>
+      <rect x="606" y="20" width="260" height="56" rx="10" fill="#f3f6f5" stroke="#dbe3e0"/><text x="736" y="54" text-anchor="middle" fill="#0f201d">FE builds</text>
+      <rect x="878" y="20" width="258" height="56" rx="10" fill="#fbece5" stroke="#f1d3c4"/><text x="1007" y="54" text-anchor="middle" fill="#b0522a">Integrate + fix</text>
+      <rect x="152" y="90" width="442" height="44" rx="10" fill="url(#hatchA)" stroke="#f1d3c4"/><text x="373" y="118" text-anchor="middle" fill="#b0522a" font-size="15">FE blocked</text>
+    </g>
+    <text x="0" y="182" font-size="15" fill="#5a6b67">One team at a time. The API contract only exists once the backend is built.</text>
+  </svg>
+  <div class="grid g3" style="margin-top:22px;gap:20px">
+    <div class="card warm"><h3>APIs are defined late</h3><p class="small">FE idles, then rushes.</p></div>
+    <div class="card warm"><h3>Specs need scarce seniors</h3><p class="small">PMs and juniors get vague stories.</p></div>
+    <div class="card warm"><h3>Mismatches surface at the end</h3><p class="small">Rework when it is most expensive.</p></div>
   </div>
 </section>
 
-<!-- 4 -->
 <section class="slide" data-foot="Part 1 · Collaboration">
-  <div class="kicker">Serial vs parallel</div>
-  <h2>Move the contract to the front of the timeline</h2>
-  <svg viewBox="0 0 1136 420" width="1136" height="420" role="img" aria-label="Timeline comparing serial and contract-first delivery">
-    <defs>
-      <pattern id="hatch" width="8" height="8" patternUnits="userSpaceOnUse" patternTransform="rotate(45)">
-        <rect width="8" height="8" fill="#fbece5"/><line x1="0" y1="0" x2="0" y2="8" stroke="#e8b9a3" stroke-width="3"/>
-      </pattern>
-      <marker id="arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#5a6b67"/></marker>
-    </defs>
-    <text x="0" y="22" font-size="14" font-weight="650" fill="#5a6b67" letter-spacing="1.5">TODAY · SERIAL</text>
-    <g font-size="14" font-weight="600">
-      <rect x="0" y="40" width="130" height="46" rx="8" fill="#f3f6f5" stroke="#dbe3e0"/><text x="65" y="68" text-anchor="middle" fill="#0f201d">Design</text>
-      <rect x="140" y="40" width="300" height="46" rx="8" fill="#f3f6f5" stroke="#dbe3e0"/><text x="290" y="68" text-anchor="middle" fill="#0f201d">BE builds</text>
-      <rect x="450" y="40" width="130" height="46" rx="8" fill="#f3f6f5" stroke="#dbe3e0"/><text x="515" y="68" text-anchor="middle" fill="#0f201d">API shared</text>
-      <rect x="590" y="40" width="280" height="46" rx="8" fill="#f3f6f5" stroke="#dbe3e0"/><text x="730" y="68" text-anchor="middle" fill="#0f201d">FE builds</text>
-      <rect x="880" y="40" width="250" height="46" rx="8" fill="#fbece5" stroke="#f1d3c4"/><text x="1005" y="68" text-anchor="middle" fill="#b0522a">Integrate + fix mismatches</text>
-      <rect x="140" y="96" width="440" height="34" rx="8" fill="url(#hatch)" stroke="#f1d3c4"/><text x="360" y="118" text-anchor="middle" fill="#b0522a" font-size="13">FE waiting</text>
+  <div class="kicker">Root cause</div>
+  <h2>The contract is decided last</h2>
+  <svg viewBox="0 0 1136 400" width="1136" height="400" role="img" aria-label="Four symptoms from the brief lead to one root cause">
+    <defs><marker id="aRoot" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#8a9894"/></marker></defs>
+    <g font-size="16" font-weight="600" fill="#0f201d">
+      <rect x="0" y="10" width="330" height="62" rx="10" fill="#f3f6f5" stroke="#dbe3e0"/><text x="22" y="47">API defined too late</text>
+      <rect x="0" y="112" width="330" height="62" rx="10" fill="#f3f6f5" stroke="#dbe3e0"/><text x="22" y="149">Spec skill is scarce</text>
+      <rect x="0" y="214" width="330" height="62" rx="10" fill="#f3f6f5" stroke="#dbe3e0"/><text x="22" y="251">PMs lack technical detail</text>
+      <rect x="0" y="316" width="330" height="62" rx="10" fill="#f3f6f5" stroke="#dbe3e0"/><text x="22" y="353">FE frustrated by delays</text>
     </g>
-
-    <line x1="0" y1="175" x2="1136" y2="175" stroke="#dbe3e0" stroke-dasharray="4 6"/>
-
-    <text x="0" y="215" font-size="14" font-weight="650" fill="#0d5c54" letter-spacing="1.5">CONTRACT-FIRST · PARALLEL</text>
-    <g font-size="14" font-weight="600">
-      <rect x="0" y="234" width="130" height="46" rx="8" fill="#f3f6f5" stroke="#dbe3e0"/><text x="65" y="262" text-anchor="middle" fill="#0f201d">Design</text>
-      <rect x="140" y="234" width="120" height="46" rx="8" fill="#e4f1ee" stroke="#c5e1db"/><text x="200" y="262" text-anchor="middle" fill="#083d38">Discovery</text>
-      <rect x="270" y="234" width="150" height="46" rx="8" fill="#e4f1ee" stroke="#c5e1db"/><text x="345" y="262" text-anchor="middle" fill="#083d38">Contract + mock</text>
-      <rect x="430" y="234" width="330" height="46" rx="8" fill="#f3f6f5" stroke="#dbe3e0"/><text x="595" y="262" text-anchor="middle" fill="#0f201d">FE builds on the mock</text>
-      <rect x="430" y="290" width="330" height="46" rx="8" fill="#f3f6f5" stroke="#dbe3e0"/><text x="595" y="318" text-anchor="middle" fill="#0f201d">BE implements the contract</text>
-      <rect x="770" y="260" width="110" height="52" rx="8" fill="#e6f3eb" stroke="#bfe0cb"/><text x="825" y="291" text-anchor="middle" fill="#2c7a4b">Integrate</text>
+    <g stroke="#8a9894" stroke-width="1.6" fill="none" marker-end="url(#aRoot)">
+      <path d="M334,41 C470,41 470,194 596,194"/>
+      <path d="M334,143 C470,143 470,194 596,194"/>
+      <path d="M334,245 C470,245 470,194 596,194"/>
+      <path d="M334,347 C470,347 470,194 596,194"/>
     </g>
-    <line x1="890" y1="286" x2="1126" y2="286" stroke="#5a6b67" stroke-width="1.5" stroke-dasharray="5 5" marker-end="url(#arr)"/>
-    <text x="1008" y="276" text-anchor="middle" font-size="14" font-weight="650" fill="#2c7a4b">time back</text>
-    <text x="0" y="392" font-size="15" fill="#5a6b67">Integration becomes a base-URL switch, because both sides built against the same contract.</text>
+    <rect x="600" y="104" width="536" height="180" rx="14" fill="#0d5c54"/>
+    <text x="630" y="150" font-size="14" font-weight="650" fill="#9fd8cc" letter-spacing="1.5">ROOT CAUSE</text>
+    <text x="630" y="192" font-size="24" font-weight="700" fill="#fff">The API contract is a by-product</text>
+    <text x="630" y="224" font-size="24" font-weight="700" fill="#fff">of the implementation,</text>
+    <text x="630" y="256" font-size="24" font-weight="700" fill="#9fd8cc">not its input.</text>
   </svg>
 </section>
 
-<!-- 5 -->
 <section class="slide" data-foot="Part 1 · Collaboration">
-  <div class="kicker">The workflow</div>
+  <div class="kicker">The solution</div>
+  <h2>Contract first: agree, then build in parallel</h2>
+  <svg viewBox="0 0 1136 300" width="1136" height="300" role="img" aria-label="Contract-first delivery with a feedback loop into the contract">
+    <defs>
+      <marker id="aSol" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#8a9894"/></marker>
+      <marker id="aFb" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#b0522a"/></marker>
+    </defs>
+    <path d="M740,150 C740,70 420,70 420,140" fill="none" stroke="#b0522a" stroke-width="2" stroke-dasharray="6 5" marker-end="url(#aFb)"/>
+    <text x="580" y="26" text-anchor="middle" font-size="15" font-weight="650" fill="#b0522a">Feedback from PM, FE and BE updates the contract</text>
+    <text x="580" y="48" text-anchor="middle" font-size="13" fill="#5a6b67">reviewed PR · changelog entry · mock updates with it</text>
+
+    <g font-size="16" font-weight="600">
+      <rect x="0" y="172" width="130" height="56" rx="10" fill="#f3f6f5" stroke="#dbe3e0"/><text x="65" y="206" text-anchor="middle" fill="#0f201d">Design</text>
+      <rect x="150" y="172" width="150" height="56" rx="10" fill="#e4f1ee" stroke="#c5e1db"/><text x="225" y="206" text-anchor="middle" fill="#083d38">Discovery</text>
+      <rect x="320" y="144" width="200" height="112" rx="12" fill="#0d5c54"/><text x="420" y="194" text-anchor="middle" fill="#fff">Contract</text><text x="420" y="218" text-anchor="middle" font-size="14" font-weight="500" fill="#cfe7e1">+ live mock</text>
+      <rect x="560" y="150" width="360" height="52" rx="10" fill="#f3f6f5" stroke="#dbe3e0"/><text x="740" y="182" text-anchor="middle" fill="#0f201d">FE builds on the mock</text>
+      <rect x="560" y="210" width="360" height="52" rx="10" fill="#f3f6f5" stroke="#dbe3e0"/><text x="740" y="242" text-anchor="middle" fill="#0f201d">BE implements the contract</text>
+      <rect x="960" y="172" width="176" height="56" rx="10" fill="#e6f3eb" stroke="#bfe0cb"/><text x="1048" y="206" text-anchor="middle" fill="#2c7a4b">Integrate</text>
+    </g>
+    <g stroke="#8a9894" stroke-width="1.6" marker-end="url(#aSol)">
+      <line x1="132" y1="200" x2="146" y2="200"/>
+      <line x1="302" y1="200" x2="316" y2="200"/>
+      <line x1="522" y1="200" x2="556" y2="176"/>
+      <line x1="522" y1="200" x2="556" y2="236"/>
+      <line x1="922" y1="176" x2="956" y2="196"/>
+      <line x1="922" y1="236" x2="956" y2="206"/>
+    </g>
+  </svg>
+  <div class="grid g3" style="margin-top:24px;gap:20px">
+    <div class="card accent"><h3>FE starts on day 1</h3><p class="small">The mock serves every UI state from the spec.</p></div>
+    <div class="card accent"><h3>The contract can change</h3><p class="small">Additive: minor version. Breaking: new version, agreed with FE.</p></div>
+    <div class="card accent"><h3>Integration is a URL switch</h3><p class="small">Both sides built against the same types.</p></div>
+  </div>
+</section>
+
+<section class="slide" data-foot="Part 1 · Collaboration">
+  <div class="kicker">How it works</div>
   <h2>Five steps, each with an owner and an output</h2>
-  <div class="pipeline" style="margin-bottom:26px">
-    <div class="step hl"><b>1 · Discovery</b><span>30–45 min</span></div><div class="arrow">→</div>
-    <div class="step hl"><b>2 · Contract</b><span>Zod → OpenAPI</span></div><div class="arrow">→</div>
-    <div class="step hl"><b>3 · Mock</b><span>Prism, same day</span></div><div class="arrow">→</div>
-    <div class="step"><b>4 · Build</b><span>FE ∥ BE</span></div><div class="arrow">→</div>
-    <div class="step"><b>5 · Integrate</b><span>switch base URL</span></div>
+  <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:14px;margin-top:6px">
+    <div class="card accent" style="padding:18px"><div class="tag">Step 1</div><h3 style="margin-top:12px">Discovery</h3><p class="small muted">PM · FE · BE</p><p class="small" style="margin-top:14px">Entities, states and actions from the wireframe</p></div>
+    <div class="card accent" style="padding:18px"><div class="tag">Step 2</div><h3 style="margin-top:12px">Contract</h3><p class="small muted">BE writes · FE approves</p><p class="small" style="margin-top:14px">Zod schemas → OpenAPI, with examples and errors</p></div>
+    <div class="card accent" style="padding:18px"><div class="tag">Step 3</div><h3 style="margin-top:12px">Mock</h3><p class="small muted">Generated</p><p class="small" style="margin-top:14px">Live mock with one example per UI state</p></div>
+    <div class="card" style="padding:18px"><div class="tag ok">Step 4</div><h3 style="margin-top:12px">Build</h3><p class="small muted">FE ∥ BE</p><p class="small" style="margin-top:14px">Both sides code against the same types</p></div>
+    <div class="card" style="padding:18px"><div class="tag ok">Step 5</div><h3 style="margin-top:12px">Integrate</h3><p class="small muted">FE</p><p class="small" style="margin-top:14px">Switch the base URL from mock to API</p></div>
   </div>
-  <table>
-    <thead><tr><th style="width:17%">Step</th><th style="width:20%">Who</th><th style="width:31%">Output</th><th>Why it helps</th></tr></thead>
-    <tbody>
-      <tr><td class="k">Discovery</td><td>PM, FE, BE</td><td>Entities, states and actions from the wireframe</td><td>Shared vocabulary, so the PM doesn't need technical depth</td></tr>
-      <tr><td class="k">Contract</td><td>BE writes, FE approves</td><td>Contract PR: schemas, examples, errors</td><td>FE is a required reviewer (CODEOWNERS)</td></tr>
-      <tr><td class="k">Mock</td><td>Generated</td><td>Live mock with one example per UI state</td><td>FE builds every state, including empty and error</td></tr>
-      <tr><td class="k">Build</td><td>FE and BE</td><td>Handlers + UI against the same types</td><td>Tests validate responses against the contract</td></tr>
-      <tr><td class="k">Integrate</td><td>FE</td><td>Mock URL → real URL</td><td>No surprises, no "the field is called something else"</td></tr>
-    </tbody>
-  </table>
+  <div class="card warm" style="margin-top:28px;padding:18px 24px">
+    <p><strong>Definition of Ready:</strong> a story enters the sprint only when its contract is merged and its mock is live.</p>
+  </div>
 </section>
 
-<!-- 6 -->
 <section class="slide" data-foot="Part 1 · Collaboration">
-  <div class="kicker">Scaling scarce spec skill</div>
-  <h2>A one-page RFC with clear owners</h2>
-  <div class="grid g-7-5 fill">
-    <div>
-      <table>
-        <thead><tr><th style="width:24%">Section</th><th style="width:18%">Owner</th><th>Content</th></tr></thead>
-        <tbody>
-          <tr><td class="k">Problem</td><td><span class="tag">PM</span></td><td>Who, why, and what "done" means</td></tr>
-          <tr><td class="k">Screen</td><td><span class="tag">PM</span></td><td>Wireframe, every element and action</td></tr>
-          <tr><td class="k">States</td><td><span class="tag">PM</span></td><td>Empty, error, and edge cases in plain words</td></tr>
-          <tr><td class="k">Contract</td><td><span class="tag warm">BE</span></td><td>Endpoints, fields, statuses, error codes</td></tr>
-          <tr><td class="k">Open Qs</td><td><span class="tag warm">BE</span></td><td>Decisions still needed, and who makes them</td></tr>
-          <tr><td class="k">Sign-off</td><td><span class="tag ok">FE</span></td><td>Approves the contract PR</td></tr>
-        </tbody>
-      </table>
-    </div>
-    <div style="display:flex;flex-direction:column;gap:16px">
-      <div class="card accent">
-        <h3>Definition of Ready</h3>
-        <p>A story enters the sprint only once its <strong>contract is merged</strong> and the <strong>mock is live</strong>.</p>
-      </div>
-      <div class="card">
-        <h3>Why this scales</h3>
-        <p>Less experienced devs fill in a known shape (a template and Zod). A senior reviews one PR instead of writing every spec.</p>
-      </div>
-      <div class="card warm">
-        <h3>Example from this case</h3>
-        <p>"5 400 / 10 000 kr": used or left? We settle it in discovery, not in code review.</p>
-      </div>
-    </div>
-  </div>
+  <div class="kicker">The RFC</div>
+  <h2>One page, three owners</h2>
+  <svg viewBox="0 0 1136 460" width="1037" height="420" role="img" aria-label="Structure of the one-page API RFC">
+    <defs><marker id="aRfc" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#8a9894"/></marker></defs>
+    <rect x="0" y="0" width="560" height="460" rx="12" fill="#fff" stroke="#c9d4d1" stroke-width="1.5"/>
+    <text x="28" y="40" font-size="18" font-weight="700" fill="#0f201d">RFC: Card home screen</text>
+    <line x1="28" y1="56" x2="532" y2="56" stroke="#dbe3e0"/>
+
+    <rect x="28" y="72" width="504" height="138" rx="10" fill="#e4f1ee" stroke="#c5e1db"/>
+    <text x="48" y="100" font-size="13" font-weight="700" fill="#083d38" letter-spacing="1.2">PRODUCT · PM</text>
+    <g font-size="15" fill="#0f201d">
+      <rect x="48" y="114" width="220" height="36" rx="7" fill="#fff"/><text x="62" y="138">Problem</text>
+      <rect x="292" y="114" width="220" height="36" rx="7" fill="#fff"/><text x="306" y="138">Screen elements</text>
+      <rect x="48" y="158" width="220" height="36" rx="7" fill="#fff"/><text x="62" y="182">Empty / error states</text>
+      <rect x="292" y="158" width="220" height="36" rx="7" fill="#fff"/><text x="306" y="182">Done means</text>
+    </g>
+
+    <rect x="28" y="224" width="504" height="138" rx="10" fill="#fbece5" stroke="#f1d3c4"/>
+    <text x="48" y="252" font-size="13" font-weight="700" fill="#b0522a" letter-spacing="1.2">CONTRACT · BE</text>
+    <g font-size="15" fill="#0f201d">
+      <rect x="48" y="266" width="220" height="36" rx="7" fill="#fff"/><text x="62" y="290">Endpoints</text>
+      <rect x="292" y="266" width="220" height="36" rx="7" fill="#fff"/><text x="306" y="290">Field rules + errors</text>
+      <rect x="48" y="310" width="220" height="36" rx="7" fill="#fff"/><text x="62" y="334">Mock states</text>
+      <rect x="292" y="310" width="220" height="36" rx="7" fill="#fff"/><text x="306" y="334">Decisions</text>
+    </g>
+
+    <rect x="28" y="376" width="504" height="62" rx="10" fill="#e6f3eb" stroke="#bfe0cb"/>
+    <text x="48" y="404" font-size="13" font-weight="700" fill="#2c7a4b" letter-spacing="1.2">SIGN-OFF · FE</text>
+    <text x="48" y="426" font-size="15" fill="#0f201d">Contract approved</text>
+
+    <g stroke="#8a9894" stroke-width="1.5" marker-end="url(#aRfc)">
+      <line x1="540" y1="141" x2="636" y2="141"/>
+      <line x1="540" y1="293" x2="636" y2="293"/>
+      <line x1="540" y1="407" x2="636" y2="407"/>
+    </g>
+    <g font-size="17" fill="#0f201d">
+      <text x="650" y="136" font-weight="700">Plain language</text>
+      <text x="650" y="160" font-size="15" fill="#5a6b67">Written in discovery. No API knowledge needed.</text>
+      <text x="650" y="288" font-weight="700">Generated from Zod</text>
+      <text x="650" y="312" font-size="15" fill="#5a6b67">Endpoints and fields come from openapi.json.</text>
+      <text x="650" y="402" font-weight="700">One approval</text>
+      <text x="650" y="426" font-size="15" fill="#5a6b67">FE reviews the contract PR (CODEOWNERS).</text>
+    </g>
+  </svg>
+  <p class="small muted" style="margin-top:14px">This screen's RFC: <code>docs/RFC.md</code></p>
 </section>
 
-<!-- 7 -->
 <section class="slide" data-foot="Part 1 · Collaboration">
   <div class="kicker">Keeping the contract honest</div>
   <h2>One source of truth, checked by machines</h2>
@@ -320,7 +353,21 @@ svg .mono { font-family: var(--mono); }
   </div>
 </section>
 
-<!-- 8 -->
+<section class="slide" data-foot="Part 1 · Collaboration">
+  <div class="kicker">What changes</div>
+  <h2>Same teams, different order</h2>
+  <table>
+    <thead><tr><th style="width:24%"></th><th style="width:34%">Today</th><th>Contract-first</th></tr></thead>
+    <tbody>
+      <tr><td class="k">FE starts</td><td>When BE ships</td><td><strong>Day 1</strong>, on the mock</td></tr>
+      <tr><td class="k">The spec</td><td>Written late by a scarce senior</td><td><strong>Fixed RFC shape</strong>; a senior reviews one PR</td></tr>
+      <tr><td class="k">PM input</td><td>A vague story</td><td>The <strong>plain-language half</strong> of the RFC</td></tr>
+      <tr><td class="k">Integration</td><td>Surprises and rework</td><td>A <strong>base-URL switch</strong>; tests catch drift</td></tr>
+      <tr><td class="k">Changes</td><td>Discovered in QA</td><td><strong>Changelog + review</strong>; breaking = new version</td></tr>
+    </tbody>
+  </table>
+</section>
+
 <section class="slide" data-foot="Part 1 · Collaboration">
   <div class="kicker">Values and outcomes</div>
   <h2>How this fits Qred, and how we'd know it works</h2>
@@ -339,14 +386,12 @@ svg .mono { font-family: var(--mono); }
   </table>
 </section>
 
-<!-- 9 -->
 <section class="slide divider" data-foot="Part 2 · API">
   <div class="kicker">Part 2</div>
   <h1>The API behind the card view</h1>
   <p class="lead" style="margin-top:18px;max-width:760px">Applying the same process to Appendix 1: wireframe → domain → contract → implementation.</p>
 </section>
 
-<!-- 10 -->
 <section class="slide" data-foot="Part 2 · API">
   <div class="kicker">Discovery on the wireframe</div>
   <h2>Every element maps to an entity or an action</h2>
@@ -378,7 +423,6 @@ svg .mono { font-family: var(--mono); }
   </div>
 </section>
 
-<!-- 11 -->
 <section class="slide" data-foot="Part 2 · API">
   <div class="kicker">Domain model</div>
   <h2>Relational Postgres: constraints, joins, one consistent read</h2>
@@ -450,25 +494,6 @@ svg .mono { font-family: var(--mono); }
   </div>
 </section>
 
-<!-- 12 -->
-<section class="slide" data-foot="Part 2 · API">
-  <div class="kicker">The distinction that matters</div>
-  <h2>Transactions, spend and invoice are three different things</h2>
-  <table>
-    <thead><tr><th style="width:18%"></th><th style="width:27%">Transaction</th><th style="width:27%">Spend (widget)</th><th>Invoice (banner)</th></tr></thead>
-    <tbody>
-      <tr><td class="k">What</td><td>One ledger entry</td><td>Used this period vs the user-set limit</td><td>Monthly statement</td></tr>
-      <tr><td class="k">When it exists</td><td>As soon as it happens</td><td>Computed on every read</td><td>When the billing cycle <strong>closes</strong></td></tr>
-      <tr><td class="k">Source</td><td>Row</td><td><code>SUM</code> of this period's rows</td><td>Row; txns get <code>invoice_id</code> at close</td></tr>
-      <tr><td class="k">On home</td><td>Latest 3, <strong>all</strong> statuses</td><td>5 400 / 10 000 kr</td><td>Oldest unpaid, or <code>null</code></td></tr>
-    </tbody>
-  </table>
-  <div class="card warm" style="margin-top:28px">
-    <p><strong>Common mistake:</strong> treating the home list as "lines on the current invoice". A purchase made today is on the home screen now, but only on an invoice after the cycle closes. So the dashboard never filters by <code>invoice_id</code>.</p>
-  </div>
-</section>
-
-<!-- 13 -->
 <section class="slide" data-foot="Part 2 · API">
   <div class="kicker">API structure</div>
   <h2>Everything scoped under the company</h2>
@@ -480,7 +505,7 @@ svg .mono { font-family: var(--mono); }
       <tr><td><span class="method get">GET</span></td><td class="mono">/companies/:companyId/cards/:cardId</td><td>Card chevron</td></tr>
       <tr><td><span class="method post">POST</span></td><td class="mono">/companies/:companyId/cards/:cardId/activate</td><td>Activate card: admins only, idempotent</td></tr>
       <tr><td><span class="method get">GET</span></td><td class="mono">/companies/:companyId/invoices/:invoiceId</td><td>Invoice-due chevron</td></tr>
-      <tr><td><span class="method get">GET</span></td><td class="mono">/companies/:companyId/transactions?cursor&amp;limit</td><td>"54 more items" (keyset cursor)</td></tr>
+      <tr><td><span class="method get">GET</span></td><td class="mono">/companies/:companyId/transactions?cursor&amp;limit</td><td>"54 more items" (cursor paging)</td></tr>
     </tbody>
   </table>
   <div class="grid g3" style="margin-top:24px;gap:18px">
@@ -490,7 +515,6 @@ svg .mono { font-family: var(--mono); }
   </div>
 </section>
 
-<!-- 14 -->
 <section class="slide" data-foot="Part 2 · API">
   <div class="kicker">Why an aggregate endpoint</div>
   <h2>A BFF for mobile: one round-trip, one snapshot</h2>
@@ -536,7 +560,6 @@ svg .mono { font-family: var(--mono); }
   </div>
 </section>
 
-<!-- 15 -->
 <section class="slide" data-foot="Part 2 · API">
   <div class="kicker">Payload</div>
   <h2>Shaped for the screen, not the tables</h2>
@@ -568,7 +591,6 @@ svg .mono { font-family: var(--mono); }
   </div>
 </section>
 
-<!-- 16 -->
 <section class="slide" data-foot="Part 2 · API">
   <div class="kicker">Code structure</div>
   <h2>Thin routes, rules in services, SQL in repos</h2>
@@ -604,19 +626,17 @@ docs/          <span class="c">openapi.json · RFC · CHANGELOG</span></pre>
   </div>
 </section>
 
-<!-- 17 -->
 <section class="slide" data-foot="Part 2 · API">
   <div class="kicker">Details that make it production-minded</div>
   <h2>Correctness under real conditions</h2>
   <div class="grid g2" style="gap:22px">
     <div class="card"><h3>Idempotent activation</h3><p class="small">One conditional statement:<br><code>UPDATE … WHERE status='pending_activation'</code><br>A double tap → 200 with the same body. Blocked → 409. Members → 403.</p></div>
-    <div class="card"><h3>Keyset pagination</h3><p class="small">Opaque cursor <code>(occurred_at, id)</code>. Stable under inserts, O(log n) with the index, unlike <code>OFFSET</code>.</p></div>
+    <div class="card"><h3>Cursor pagination</h3><p class="small">"Next page" means <em>older than the last row I saw</em> <code>(occurred_at, id)</code>. New purchases don't shift pages, and it stays fast at any depth, unlike <code>OFFSET</code>.</p></div>
     <div class="card"><h3>Snapshot reads</h3><p class="small">Dashboard queries share one read-only REPEATABLE READ transaction, so the numbers never disagree.</p></div>
     <div class="card"><h3>Demo that never breaks</h3><p class="small">Seed dates are relative to <em>now</em>, so the view matches on any day. Tests run on a real Postgres via Testcontainers.</p></div>
   </div>
 </section>
 
-<!-- 18 -->
 <section class="slide" data-foot="Part 2 · API">
   <div class="kicker">Testing</div>
   <h2>Few tests, aimed at what can go wrong</h2>
@@ -631,7 +651,7 @@ docs/          <span class="c">openapi.json · RFC · CHANGELOG</span></pre>
         <tr><td>Member activates</td><td>403 <code>ROLE_FORBIDDEN</code></td></tr>
         <tr><td>Page through transactions</td><td>57 unique, newest first</td></tr>
         <tr><td>Committed spec vs schemas</td><td>identical; examples valid</td></tr>
-        <tr><td>Seed on the 1st, on New Year's Eve</td><td>still matches the wireframe</td></tr>
+        <tr><td>Seed on the 1st and on 31 Dec</td><td>still 5 400 kr used, 57 txns</td></tr>
       </tbody>
     </table>
     <div style="display:flex;flex-direction:column;gap:16px">
@@ -642,37 +662,42 @@ docs/          <span class="c">openapi.json · RFC · CHANGELOG</span></pre>
   </div>
 </section>
 
-<!-- 19 -->
 <section class="slide" data-foot="Demo">
   <div class="kicker">Demo</div>
-  <h2>What I'll show</h2>
+  <h2>Live, from the terminal</h2>
   <div class="grid g2" style="gap:32px">
-<pre style="font-size:14px"><span class="c"># run</span>
-docker compose up -d
-npm run migrate &amp;&amp; npm run seed
-npm run dev
+<pre style="font-size:14.5px"><span class="c"># start</span>
+make db-reset &amp;&amp; npm run dev
 
-<span class="c"># home screen</span>
-GET  /companies/cmp_1/dashboard
-<span class="c"># activate, twice</span>
-POST /companies/cmp_1/cards/crd_1/activate
-<span class="c"># access control</span>
-GET  /companies/cmp_3/dashboard   <span class="b">403</span>
+<span class="c"># run a case (no args lists them)</span>
+./scripts/demo.sh dashboard
+./scripts/demo.sh activate
+./scripts/demo.sh member
+./scripts/demo.sh forbidden
+./scripts/demo.sh isolation
+./scripts/demo.sh other-company
+./scripts/demo.sh transactions
 
-<span class="c"># FE view: mock from the spec</span>
-npm run openapi &amp;&amp; npm run mock</pre>
-    <ol style="padding-left:22px">
-      <li style="margin-bottom:12px">Dashboard matches the wireframe number for number</li>
-      <li style="margin-bottom:12px">Activate: the button flag flips; the second call is still 200</li>
-      <li style="margin-bottom:12px">Switch to <em>Other AB</em>: no invoice, banner hidden</li>
-      <li style="margin-bottom:12px">Stranger company: 403 with the shared error shape</li>
-      <li style="margin-bottom:12px">Same responses from the Prism mock, before any handler existed</li>
-      <li>Git log: contract commit lands before the handlers</li>
-    </ol>
+<span class="c"># FE view: the mock, from the spec alone</span>
+npm run mock
+./scripts/demo.sh mock</pre>
+    <table style="font-size:16px">
+      <thead><tr><th style="width:36%">Case</th><th>Shows</th></tr></thead>
+      <tbody>
+        <tr><td class="mono">dashboard</td><td>Wireframe numbers: 5 400 / 10 000, 57 / 54</td></tr>
+        <tr><td class="mono">activate</td><td>Twice → same card; button flag off</td></tr>
+        <tr><td class="mono">member</td><td>403 <code>ROLE_FORBIDDEN</code></td></tr>
+        <tr><td class="mono">forbidden</td><td>403 <code>COMPANY_FORBIDDEN</code></td></tr>
+        <tr><td class="mono">isolation</td><td>404 for another company's card</td></tr>
+        <tr><td class="mono">other-company</td><td><code>invoiceDue: null</code></td></tr>
+        <tr><td class="mono">transactions</td><td>Page 2 via the cursor</td></tr>
+        <tr><td class="mono">mock</td><td>Same contract, no backend</td></tr>
+      </tbody>
+    </table>
   </div>
+  <p class="small muted" style="margin-top:18px">Also: Swagger UI at <code>localhost:3000/docs</code> · <code>git log</code>: contract commit before the handlers · <code>./scripts/demo.sh reset</code> between runs</p>
 </section>
 
-<!-- 20 -->
 <section class="slide" data-foot="Further work">
   <div class="kicker">With more time</div>
   <h2>Next steps</h2>
@@ -689,7 +714,6 @@ npm run openapi &amp;&amp; npm run mock</pre>
   </table>
 </section>
 
-<!-- 21 -->
 <section class="slide title-slide" data-foot="Thank you">
   <div class="kicker">Thank you</div>
   <h1>Questions?</h1>

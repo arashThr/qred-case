@@ -56,7 +56,7 @@ FE switches the base URL from the mock to the real API. If the contract held, no
 	- FE: sign-off on the contract
 - Definition of Ready: a story cannot enter the sprint until its contract is merged and the mock is live
 - Contract changelog, updated in the same PR as any schema change
-- The template and the Zod-first setup are how spec skill scales: less experienced devs fill in a known shape, and a senior reviews one PR instead of writing the spec
+- The fixed RFC structure (sections and owners above; [docs/RFC.md](docs/RFC.md) is the one for this screen) and the Zod-first setup are how spec skill scales: less experienced devs fill in a known shape, and a senior reviews one PR instead of writing the spec
 
 ### How we'd know it works
 
@@ -121,7 +121,7 @@ BFF/aggregator: one round-trip and one point-in-time read (a single read-only RE
 The server makes the business decisions (used and remaining amounts, which actions are enabled). The FE only renders and formats (`Intl.NumberFormat` for "5 400 kr").
 Card artwork and the support link are FE-owned: artwork is chosen by `brand`, and the API sends neither image URLs nor the support URL.
 
-Demo auth: `Authorization: Bearer demo`. Production: session/OIDC + a membership check on companyId.
+Demo auth: `Authorization: Bearer demo` (token and user come from env). Every company route then checks membership on companyId.
 
 Sample:
 
