@@ -20,6 +20,7 @@ Backend for the mobile card home screen. Design: [proposal.md](proposal.md) · C
 - OpenAPI spec: http://localhost:3000/openapi.json
 - Auth header on every `/api/v1` call: `Authorization: Bearer demo`
 - Request examples: [http/api.http](http/api.http)
+- Demo script: `./scripts/demo.sh <case>` (no args lists the cases; needs `jq`)
 
 ## Endpoints
 
