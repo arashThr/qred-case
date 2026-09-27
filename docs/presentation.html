@@ -459,7 +459,7 @@ svg .mono { font-family: var(--mono); }
     <tbody>
       <tr><td class="k">What</td><td>One ledger entry</td><td>Used this period vs the user-set limit</td><td>Monthly statement</td></tr>
       <tr><td class="k">When it exists</td><td>As soon as it happens</td><td>Computed on every read</td><td>When the billing cycle <strong>closes</strong></td></tr>
-      <tr><td class="k">Source</td><td>Row</td><td><code>SUM</code> of this period's rows, excluding reversed</td><td>Row; txns get <code>invoice_id</code> at close</td></tr>
+      <tr><td class="k">Source</td><td>Row</td><td><code>SUM</code> of this period's rows</td><td>Row; txns get <code>invoice_id</code> at close</td></tr>
       <tr><td class="k">On home</td><td>Latest 3, <strong>all</strong> statuses</td><td>5 400 / 10 000 kr</td><td>Oldest unpaid, or <code>null</code></td></tr>
     </tbody>
   </table>

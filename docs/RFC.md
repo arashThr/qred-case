@@ -56,7 +56,7 @@ All require `Authorization: Bearer <token>` and are scoped to a company the call
 ### Field rules
 
 - Money is always `{ minor, currency }` in minor units: `540000` SEK = 5 400 kr. The app formats it; the API never sends formatted strings.
-- `spend.used` is the sum of this billing period's transactions (reversed excluded). `spend.remaining = limit − used`, computed on the server.
+- `spend.used` is the sum of this billing period's transactions, pending and settled. `spend.remaining = limit − used`, computed on the server.
 - `transactions.latest` holds the 3 newest of all transactions, any status. It is **not** "lines on the invoice": transactions are attached to an invoice only when the billing month closes.
 - `invoiceDue`, `card` and `spend` are `null` when there is nothing to show.
 - `actions.activateCard.enabled` drives the button. The app does not derive it from the card status.

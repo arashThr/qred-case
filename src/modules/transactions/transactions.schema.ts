@@ -2,7 +2,7 @@ import { z } from 'zod'
 import { Money } from '../../shared/schemas.js'
 
 export const TransactionStatus = z
-  .enum(['pending', 'settled', 'reversed'])
+  .enum(['pending', 'settled'])
   .meta({ id: 'TransactionStatus' })
 export type TransactionStatus = z.infer<typeof TransactionStatus>
 

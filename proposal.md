@@ -83,7 +83,7 @@ transactions    id, company_id, card_id, amount_minor, currency, merchant, occur
 `transactions.invoice_id` is nullable. It is set when the billing cycle closes, not when the purchase happens.
 Money is stored as integer minor units (öre) + currency. No floats. Positive amount = spend, negative = refund/credit.
 No PAN on cards, only last4.
-Used spend is computed from transaction rows in the current period (status ≠ reversed). Nothing is stored as a running total, so it cannot drift.
+Used spend is computed from transaction rows in the current period (pending and settled). Nothing is stored as a running total, so it cannot drift.
 Index: `transactions(company_id, occurred_at DESC, id DESC)` serves the latest-3 query, the count, and cursor pagination.
 
 The dashboard is company-scoped. Membership is the ACL.

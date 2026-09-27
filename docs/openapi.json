@@ -969,8 +969,7 @@
         "type": "string",
         "enum": [
           "pending",
-          "settled",
-          "reversed"
+          "settled"
         ]
       },
       "Invoice": {
