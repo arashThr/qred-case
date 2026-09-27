@@ -11,9 +11,7 @@ Backend for the mobile card home screen. Design: [proposal.md](proposal.md) · C
 
 - `npm install`
 - `cp .env.example .env`
-- `docker compose up -d` (starts Postgres)
-- `npm run migrate` (creates the tables)
-- `npm run seed` (resets the demo data)
+- `make db-reset` (starts Postgres, creates the tables, loads demo data)
 - `npm run dev` (starts the API on http://localhost:3000)
 
 ## Explore
@@ -40,9 +38,9 @@ Backend for the mobile card home screen. Design: [proposal.md](proposal.md) · C
 
 ## Docker
 
-- Whole system (Postgres + migrations + API): `docker compose -f compose.prod.yml up -d --build`
-- With demo data: add `--profile demo`
-- Stop: `docker compose -f compose.prod.yml down` (add `-v` to delete the data)
+- Whole system (Postgres + migrations + API): `make prod-up`, or `make prod-demo` with demo data
+- Stop: `make prod-down`, or `make prod-clean` to delete the data
+- All targets: `make help`
 - Settings come from `.env` (read at runtime; not baked into the image)
 
 ## CI
