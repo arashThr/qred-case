@@ -40,9 +40,10 @@ Backend for the mobile card home screen. Design: [proposal.md](proposal.md) · C
 
 ## Docker
 
-- `docker build -t qred-card-dashboard .`
-- `docker run --rm --network qred-card-dashboard_default -e POSTGRES_HOST=postgres -p 3000:3000 qred-card-dashboard`
-- Migrations and seed from the image: append `node dist/db/migrate.js` or `node dist/db/seed.js` to the run command
+- Whole system (Postgres + migrations + API): `docker compose -f compose.prod.yml up -d --build`
+- With demo data: add `--profile demo`
+- Stop: `docker compose -f compose.prod.yml down` (add `-v` to delete the data)
+- Settings come from `.env` (read at runtime; not baked into the image)
 
 ## CI
 
