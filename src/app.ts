@@ -1,5 +1,6 @@
 import express, { Router } from 'express'
 import type { Knex } from 'knex'
+import swaggerUi from 'swagger-ui-express'
 import { db, pingDb } from './db/knex.js'
 import { requireAuth, requireMembership } from './http/auth.js'
 import { errorHandler, notFound } from './http/errors.js'
@@ -8,6 +9,7 @@ import { companiesRouter } from './modules/companies/companies.routes.js'
 import { dashboardRouter } from './modules/dashboard/dashboard.routes.js'
 import { invoicesRouter } from './modules/invoices/invoices.routes.js'
 import { transactionsRouter } from './modules/transactions/transactions.routes.js'
+import { buildDocument } from './openapi/document.js'
 
 export function createApp(client: Knex = db) {
   const app = express()
@@ -25,6 +27,12 @@ export function createApp(client: Knex = db) {
       })
     }
   })
+
+  const spec = buildDocument()
+  app.get('/openapi.json', (_req, res) => {
+    res.json(spec)
+  })
+  app.use('/docs', swaggerUi.serve, swaggerUi.setup(spec))
 
   const company = Router({ mergeParams: true })
   company.use(requireMembership(client))
