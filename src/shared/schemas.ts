@@ -22,6 +22,7 @@ export const ErrorCode = z
     'VALIDATION_ERROR',
     'UNAUTHENTICATED',
     'COMPANY_FORBIDDEN',
+    'ROLE_FORBIDDEN',
     'CARD_NOT_FOUND',
     'INVOICE_NOT_FOUND',
     'ROUTE_NOT_FOUND',

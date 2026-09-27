@@ -8,7 +8,8 @@ export function dashboardRouter(db: Knex): Router {
 
   router.get('/', async (req, res) => {
     const { companyId } = CompanyParams.parse(req.params)
-    res.json(await getDashboard(db, res.locals.userId, companyId))
+    const { userId, role } = res.locals
+    res.json(await getDashboard(db, { userId, role }, companyId))
   })
 
   return router

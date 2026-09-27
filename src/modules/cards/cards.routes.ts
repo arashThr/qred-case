@@ -13,7 +13,7 @@ export function cardsRouter(db: Knex): Router {
 
   router.post('/:cardId/activate', async (req, res) => {
     const { companyId, cardId } = CardParams.parse(req.params)
-    res.json(await activateCard(db, companyId, cardId))
+    res.json(await activateCard(db, res.locals.role, companyId, cardId))
   })
 
   return router

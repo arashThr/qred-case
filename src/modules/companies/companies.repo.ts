@@ -1,5 +1,7 @@
 import type { Knex } from 'knex'
 
+export type MembershipRole = 'admin' | 'member'
+
 export type CompanyRow = {
   id: string
   name: string
@@ -23,13 +25,13 @@ export function findCompany(
   return db('companies').where({ id: companyId }).first('id', 'name')
 }
 
-export async function isMember(
+export async function findMembershipRole(
   db: Knex,
   userId: string,
   companyId: string,
-): Promise<boolean> {
+): Promise<MembershipRole | undefined> {
   const membership = await db('memberships')
     .where({ user_id: userId, company_id: companyId })
-    .first('user_id')
-  return membership !== undefined
+    .first<{ role: MembershipRole } | undefined>('role')
+  return membership?.role
 }

@@ -2,7 +2,7 @@
 
 | | |
 |---|---|
-| Status | Accepted, contract v1.0.0 |
+| Status | Accepted, contract v1.1.0 |
 | Screen | Mobile app, card home (Appendix 1) |
 | Contract | [`openapi.json`](openapi.json), generated from the Zod schemas in `src/modules/*/*.schema.ts` |
 | Changes | [`CONTRACT_CHANGELOG.md`](CONTRACT_CHANGELOG.md) |
@@ -22,7 +22,7 @@ A business owner opens the app and needs to see at a glance, for one of their co
 | 3 | Card | Card artwork, last 4 digits | Card details |
 | 4 | Spend | "5 400 / 10 000 kr", based on your set limit | (limit settings, out of scope) |
 | 5 | Latest transactions | 3 newest + "54 more items" | Full transaction list |
-| 6 | Activate card | Button, only while the card is not activated | Activates the card |
+| 6 | Activate card | Button, only while the card is not activated and the user is an admin | Activates the card |
 | 7 | Contact support | Button, always | Support page (app-owned link) |
 
 ### States
@@ -31,7 +31,7 @@ A business owner opens the app and needs to see at a glance, for one of their co
 - No card yet: the card tile and the Activate button are hidden.
 - No limit set: the spend widget is hidden.
 - No transactions: the list shows an empty state, with no "more items" link.
-- Card already active or blocked: the Activate button is hidden.
+- Card already active or blocked, or the user is not an admin: the Activate button is hidden.
 - The user opens a company they don't belong to: an error, and no data is shown.
 
 ### Done means
@@ -49,7 +49,7 @@ All require `Authorization: Bearer <token>` and are scoped to a company the call
 | GET | `/api/v1/companies` | Company switcher |
 | GET | `/api/v1/companies/{companyId}/dashboard` | The whole home screen, one snapshot |
 | GET | `/api/v1/companies/{companyId}/cards/{cardId}` | Card details |
-| POST | `/api/v1/companies/{companyId}/cards/{cardId}/activate` | Activate, idempotent |
+| POST | `/api/v1/companies/{companyId}/cards/{cardId}/activate` | Activate (admins only), idempotent |
 | GET | `/api/v1/companies/{companyId}/invoices/{invoiceId}` | Invoice details |
 | GET | `/api/v1/companies/{companyId}/transactions?cursor&limit` | Full list, newest first |
 
@@ -72,6 +72,7 @@ One shape everywhere: `{ "error": { "code": "...", "message": "..." } }`
 | 400 | `VALIDATION_ERROR` | Bad `limit` or `cursor` |
 | 401 | `UNAUTHENTICATED` | Missing or invalid token |
 | 403 | `COMPANY_FORBIDDEN` | Not a member of the company |
+| 403 | `ROLE_FORBIDDEN` | Action needs the admin role |
 | 404 | `CARD_NOT_FOUND`, `INVOICE_NOT_FOUND`, `ROUTE_NOT_FOUND` | Not found in this company |
 | 409 | `CARD_NOT_ACTIVATABLE` | Card is blocked |
 

@@ -1,5 +1,6 @@
 import type { Knex } from 'knex'
 import { AppError } from '../../http/errors.js'
+import type { MembershipRole } from '../companies/companies.repo.js'
 import { activatePendingCard, type CardRow, findCard } from './cards.repo.js'
 import type { Card } from './cards.schema.js'
 
@@ -31,11 +32,20 @@ export async function getCard(
   return toCard(await findCardOrThrow(db, companyId, cardId))
 }
 
+export function canActivateCards(role: MembershipRole): boolean {
+  return role === 'admin'
+}
+
 export async function activateCard(
   db: Knex,
+  role: MembershipRole,
   companyId: string,
   cardId: string,
 ): Promise<Card> {
+  if (!canActivateCards(role)) {
+    throw new AppError(403, 'ROLE_FORBIDDEN', 'Only admins can activate cards')
+  }
+
   const activated = await activatePendingCard(db, companyId, cardId)
   if (activated) return toCard(activated)
 

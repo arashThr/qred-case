@@ -2,7 +2,7 @@
   "openapi": "3.1.0",
   "info": {
     "title": "Qred Card Dashboard API",
-    "version": "1.0.0",
+    "version": "1.1.0",
     "description": "Backend for the mobile card home view. Money is always { minor, currency } in minor units (öre)."
   },
   "servers": [
@@ -358,7 +358,7 @@
     "/api/v1/companies/{companyId}/cards/{cardId}/activate": {
       "post": {
         "operationId": "activateCard",
-        "summary": "Activate a card. Idempotent: an active card returns 200 unchanged.",
+        "summary": "Activate a card (admins only). Idempotent: an active card returns 200 unchanged.",
         "parameters": [
           {
             "in": "path",
@@ -403,7 +403,7 @@
             }
           },
           "403": {
-            "description": "Caller is not a member of the company",
+            "description": "Not a member of the company, or not an admin",
             "content": {
               "application/json": {
                 "schema": {
@@ -660,6 +660,7 @@
           "VALIDATION_ERROR",
           "UNAUTHENTICATED",
           "COMPANY_FORBIDDEN",
+          "ROLE_FORBIDDEN",
           "CARD_NOT_FOUND",
           "INVOICE_NOT_FOUND",
           "ROUTE_NOT_FOUND",

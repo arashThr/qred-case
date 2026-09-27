@@ -39,7 +39,7 @@ export function buildDocument(): ReturnType<typeof createDocument> {
     openapi: '3.1.0',
     info: {
       title: 'Qred Card Dashboard API',
-      version: '1.0.0',
+      version: '1.1.0',
       description:
         'Backend for the mobile card home view. Money is always { minor, currency } in minor units (öre).',
     },
@@ -101,11 +101,12 @@ export function buildDocument(): ReturnType<typeof createDocument> {
         post: {
           operationId: 'activateCard',
           summary:
-            'Activate a card. Idempotent: an active card returns 200 unchanged.',
+            'Activate a card (admins only). Idempotent: an active card returns 200 unchanged.',
           requestParams: { path: CardParams },
           responses: {
             '200': ok('The activated card', Card),
             ...companyErrors,
+            '403': error('Not a member of the company, or not an admin'),
             '404': error('Card not found in this company'),
             '409': error('Card cannot be activated (blocked)'),
           },

@@ -2,10 +2,11 @@ import type { Knex } from 'knex'
 import { AppError } from '../../http/errors.js'
 import { monthStartUtc } from '../../shared/dates.js'
 import { findNewestCard } from '../cards/cards.repo.js'
-import { toCard } from '../cards/cards.service.js'
+import { canActivateCards, toCard } from '../cards/cards.service.js'
 import {
   findCompany,
   listCompaniesForUser,
+  type MembershipRole,
 } from '../companies/companies.repo.js'
 import {
   findOldestUnpaidInvoice,
@@ -43,9 +44,14 @@ function toSpend(limit: SpendLimitRow, usedMinor: number): Spend {
   }
 }
 
+export type Viewer = {
+  userId: string
+  role: MembershipRole
+}
+
 export function getDashboard(
   db: Knex,
-  userId: string,
+  viewer: Viewer,
   companyId: string,
   now = new Date(),
 ): Promise<Dashboard> {
@@ -62,7 +68,7 @@ export function getDashboard(
         totalCount,
       ] = await Promise.all([
         findCompany(trx, companyId),
-        listCompaniesForUser(trx, userId),
+        listCompaniesForUser(trx, viewer.userId),
         findOldestUnpaidInvoice(trx, companyId),
         findNewestCard(trx, companyId),
         findSpendLimit(trx, companyId),
@@ -90,7 +96,11 @@ export function getDashboard(
           remainingCount: totalCount - latest.length,
         },
         actions: {
-          activateCard: { enabled: card?.status === 'pending_activation' },
+          activateCard: {
+            enabled:
+              card?.status === 'pending_activation' &&
+              canActivateCards(viewer.role),
+          },
         },
       }
     },
