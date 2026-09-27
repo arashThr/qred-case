@@ -1,5 +1,10 @@
 import { z } from 'zod'
-import { createDocument, type ZodOpenApiResponseObject } from 'zod-openapi'
+import {
+  createDocument,
+  type CreateDocumentOptions,
+  type ZodOpenApiObject,
+  type ZodOpenApiResponseObject,
+} from 'zod-openapi'
 import { Card, CardParams } from '../modules/cards/cards.schema.js'
 import { CompanyList } from '../modules/companies/companies.schema.js'
 import {
@@ -30,7 +35,7 @@ const companyErrors = {
 }
 
 export function buildDocument(): ReturnType<typeof createDocument> {
-  return createDocument({
+  const document: ZodOpenApiObject = {
     openapi: '3.1.0',
     info: {
       title: 'Qred Card Dashboard API',
@@ -132,5 +137,16 @@ export function buildDocument(): ReturnType<typeof createDocument> {
         },
       },
     },
-  })
+  }
+
+  const options: CreateDocumentOptions = {
+    // format already describes dates; drop the long regex Zod emits alongside it.
+    override: ({ jsonSchema }) => {
+      if (jsonSchema.format === 'date' || jsonSchema.format === 'date-time') {
+        delete jsonSchema.pattern
+      }
+    },
+  }
+
+  return createDocument(document, options)
 }
