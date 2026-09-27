@@ -34,7 +34,7 @@ const LAST_MONTH: Purchase[] = [
   ['Postnord', 10000],
 ]
 
-// This month: 883 kr + 299 kr + 6 × 703 kr = 5 400 kr used.
+// This month: 883 kr + 299 kr + 6 rounds of the 8 purchases below (703 kr per round) = 5 400 kr used.
 const THIS_MONTH_FIRST: Purchase[] = [
   ['SAS', 88300],
   ['Elgiganten', 29900],
@@ -129,8 +129,8 @@ export async function seed(client: Knex, now = new Date()): Promise<void> {
     ])
 
     await trx('memberships').insert([
-      { user_id: 'usr_1', company_id: 'cmp_1', role: 'owner' },
-      { user_id: 'usr_1', company_id: 'cmp_2', role: 'admin' },
+      { user_id: 'usr_1', company_id: 'cmp_1', role: 'admin' },
+      { user_id: 'usr_1', company_id: 'cmp_2', role: 'member' },
     ])
 
     await trx('cards').insert([

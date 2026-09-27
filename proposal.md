@@ -73,7 +73,7 @@ Relational Postgres. Constraints, joins, and one consistent read matter more her
 ```
 users           id, name
 companies       id, name
-memberships     user_id, company_id, role                         PK(user_id, company_id)
+memberships     user_id, company_id, role                         PK(user_id, company_id), role = admin | member
 cards           id, company_id, status, brand, last4, issued_at, activated_at
 spend_limits    company_id (PK), amount_minor, currency, basis   basis = user_set_limit | credit_limit
 invoices        id, company_id, period_start, period_end, due_date, amount_minor, currency, status

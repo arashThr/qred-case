@@ -14,7 +14,7 @@ export async function up(knex: Knex): Promise<void> {
   await knex.schema.createTable('memberships', (t) => {
     t.text('user_id').notNullable().references('users.id')
     t.text('company_id').notNullable().references('companies.id')
-    t.enu('role', ['owner', 'admin', 'member']).notNullable()
+    t.enu('role', ['admin', 'member']).notNullable()
     t.primary(['user_id', 'company_id'])
   })
 
