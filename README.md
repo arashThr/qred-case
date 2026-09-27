@@ -38,6 +38,16 @@ Backend for the mobile card home screen. Design: [proposal.md](proposal.md) · C
 - `cmp_2` Other AB: active card, nothing due
 - `cmp_3` Stranger AB: not a member (403)
 
+## Docker
+
+- `docker build -t qred-card-dashboard .`
+- `docker run --rm --network qred-card-dashboard_default -e POSTGRES_HOST=postgres -p 3000:3000 qred-card-dashboard`
+- Migrations and seed from the image: append `node dist/db/migrate.js` or `node dist/db/seed.js` to the run command
+
+## CI
+
+- GitHub Actions ([.github/workflows/ci.yml](.github/workflows/ci.yml)): typecheck, lint, format check, build, tests, then the Docker image (pushed to GHCR on `main`)
+
 ## Other commands
 
 - `npm run mock`: Prism mock server from the spec on http://localhost:4010
