@@ -84,9 +84,9 @@ transactions    id, company_id, card_id, amount_minor, currency, merchant, occur
 Money is stored as integer minor units (öre) + currency. No floats. Positive amount = spend, negative = refund/credit.
 No PAN on cards, only last4.
 Used spend is computed from transaction rows in the current period (pending and settled). Nothing is stored as a running total, so it cannot drift.
-Index: `transactions(company_id, occurred_at DESC, id DESC)` serves the latest-3 query, the count, and cursor pagination.
+Index: `transactions(company_id, occurred_at, id)` serves the latest-3 query, the count, and cursor pagination (Postgres scans it backwards for newest-first).
 
-The dashboard is company-scoped. Membership is the ACL.
+The dashboard is company-scoped. Membership is the ACL; the role (`admin | member`) gates card activation.
 The demo has one card per company, as in the mock. The schema allows N cards, and the dashboard shows the most recently issued one.
 
 ### API architecture
@@ -103,7 +103,7 @@ GET  /api/v1/companies/:companyId/invoices/:invoiceId           Invoice due chev
 GET  /api/v1/companies/:companyId/transactions?cursor&limit     "54 more items"
 ```
 
-Activate is idempotent: a second call on an already-active card returns 200 with the same body and does not change `activated_at`. Activating a blocked card returns 409.
+Activate is idempotent: a second call on an already-active card returns 200 with the same body and does not change `activated_at`. Activating a blocked card returns 409. Only admins can activate; members get 403 `ROLE_FORBIDDEN`.
 The update is a single conditional `UPDATE ... WHERE status = 'pending_activation'`, so it is safe under a double tap.
 
 #### Aggregate endpoint
@@ -174,7 +174,7 @@ Sample:
 Empty states are part of the contract: `invoiceDue`, `card`, and `spend` are nullable, and `latest` can be `[]` with counts of 0.
 
 Errors share one shape: `{ "error": { "code": "COMPANY_FORBIDDEN", "message": "..." } }`
-400 validation, 401 no/bad token, 403 not a member of the company, 404 entity not found in that company, 409 invalid card state.
+400 validation, 401 no/bad token, 403 not a member of the company or not an admin, 404 entity not found in that company, 409 invalid card state.
 
 ## Implementation
 
@@ -182,6 +182,8 @@ Routes (thin controllers: parse with Zod, call service, respond) → Service (ru
 Node.js 24, TypeScript (strict, ESM), Express 5, Knex + pg, Zod
 zod-openapi generates the OpenAPI spec from the Zod schemas; Prism mocks from it
 Testing: node:test + SuperTest + Testcontainers (real Postgres, same image as compose)
+Swagger UI at `/docs`, generated from the same schemas
+CI (GitHub Actions): typecheck, lint, build, tests, then a multi-stage Docker image pushed to GHCR
 The seed matches the view and uses dates relative to now, so the demo works on any day: Company AB, 5 400 of 10 000 kr used, 57 transactions, card pending activation, invoice due
 Git history follows the workflow: contract commit → mock → migrations/seed → handlers → tests
 
@@ -202,6 +204,16 @@ Git history follows the workflow: contract commit → mock → migrations/seed �
 
 ## Future improvements
 
-- Filters on the transaction list (date range, card, status)
+- Manage infrastructure provisioning with Terraform
+- Correct month boundaries for billing cycles (Europe/Stockholm; the demo uses UTC)
+- Create a separate BFF service with dashboard endpoint that takes care of client auth
 - Breaking-change detection in CI (oasdiff)
-- Real auth, rate limiting, structured logs with request ids, tracing
+- Rate limiting, structured logs with request ids, tracing
+
+### Security
+
+- Audit log of who activated which card, when, and from where
+- Secrets in a secret manager (not env files); TLS to the database; a least-privilege DB user for the app, separate from the migration user
+- Security headers (helmet), CORS allow-list, request size limits; Swagger UI disabled in production
+- Dependency and image scanning in CI (Dependabot, npm audit, Trivy) and static analysis (CodeQL)
+- Idempotency keys once activation calls the card processor

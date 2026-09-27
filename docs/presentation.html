@@ -299,8 +299,8 @@ svg .mono { font-family: var(--mono); }
       <text x="628" y="137" font-weight="700" fill="#0f201d">Typed FE client</text>
       <text x="628" y="159" font-size="13" fill="#5a6b67">openapi-typescript, no hand-copied types</text>
       <rect x="610" y="214" width="300" height="70" rx="10" fill="#f3f6f5" stroke="#dbe3e0"/>
-      <text x="628" y="244" font-weight="700" fill="#0f201d">CI: oasdiff vs main</text>
-      <text x="628" y="266" font-size="13" fill="#5a6b67">fails on unannounced breaking change</text>
+      <text x="628" y="244" font-weight="700" fill="#0f201d">CI: contract test</text>
+      <text x="628" y="266" font-size="13" fill="#5a6b67">stale spec or bad example fails the PR</text>
     </g>
     <path d="M532,142 C570,142 570,35 606,35" fill="none" stroke="#0d5c54" stroke-width="2" marker-end="url(#a2)"/>
     <line x1="532" y1="142" x2="606" y2="142" stroke="#0d5c54" stroke-width="2" marker-end="url(#a2)"/>
@@ -422,7 +422,7 @@ svg .mono { font-family: var(--mono); }
       <rect x="0" y="230" width="300" height="126" rx="8" fill="#fff" stroke="#c9d4d1"/>
       <rect x="0" y="230" width="300" height="30" rx="8" fill="#0d5c54"/><rect x="0" y="250" width="300" height="10" fill="#0d5c54"/>
       <text x="14" y="251" fill="#fff" font-weight="700">spend_limits</text>
-      <text x="14" y="284" fill="#0f201d">company_id  unique</text>
+      <text x="14" y="284" fill="#0f201d">company_id  PK</text>
       <text x="14" y="306" fill="#0f201d">amount_minor, currency</text>
       <text x="14" y="328" fill="#0f201d">basis</text>
 
@@ -445,7 +445,7 @@ svg .mono { font-family: var(--mono); }
   </svg>
   <div class="grid g3" style="margin-top:10px;gap:18px">
     <p class="small"><strong>Money</strong> as integer öre + currency. No floats, no formatted strings.</p>
-    <p class="small"><strong>No PAN</strong> stored, last4 only. Index on <code>(company_id, occurred_at desc, id desc)</code>.</p>
+    <p class="small"><strong>No PAN</strong> stored, last4 only. Index on <code>(company_id, occurred_at, id)</code>.</p>
     <p class="small"><strong>Used spend</strong> is computed from rows, never stored, so it can't drift.</p>
   </div>
 </section>
@@ -478,7 +478,7 @@ svg .mono { font-family: var(--mono); }
       <tr><td><span class="method get">GET</span></td><td class="mono">/companies</td><td>Company switcher</td></tr>
       <tr><td><span class="method get">GET</span></td><td class="mono"><strong>/companies/:companyId/dashboard</strong></td><td><strong>The whole home screen, one call</strong></td></tr>
       <tr><td><span class="method get">GET</span></td><td class="mono">/companies/:companyId/cards/:cardId</td><td>Card chevron</td></tr>
-      <tr><td><span class="method post">POST</span></td><td class="mono">/companies/:companyId/cards/:cardId/activate</td><td>Activate card, idempotent</td></tr>
+      <tr><td><span class="method post">POST</span></td><td class="mono">/companies/:companyId/cards/:cardId/activate</td><td>Activate card: admins only, idempotent</td></tr>
       <tr><td><span class="method get">GET</span></td><td class="mono">/companies/:companyId/invoices/:invoiceId</td><td>Invoice-due chevron</td></tr>
       <tr><td><span class="method get">GET</span></td><td class="mono">/companies/:companyId/transactions?cursor&amp;limit</td><td>"54 more items" (keyset cursor)</td></tr>
     </tbody>
@@ -590,6 +590,7 @@ svg .mono { font-family: var(--mono); }
         <tr><td class="k">Knex</td><td>Explicit SQL, transactions, no ORM magic</td></tr>
         <tr><td class="k">Zod + zod-openapi</td><td>One schema: validation, types, and spec</td></tr>
         <tr><td class="k">node:test</td><td>Built into Node, zero extra runner</td></tr>
+        <tr><td class="k">GitHub Actions</td><td>Checks, tests, then the Docker image</td></tr>
       </tbody>
     </table>
 <pre style="font-size:13.5px;padding:18px 22px">src/
@@ -608,7 +609,7 @@ docs/          <span class="c">openapi.json · RFC · CHANGELOG</span></pre>
   <div class="kicker">Details that make it production-minded</div>
   <h2>Correctness under real conditions</h2>
   <div class="grid g2" style="gap:22px">
-    <div class="card"><h3>Idempotent activation</h3><p class="small">One conditional statement:<br><code>UPDATE … WHERE status='pending_activation'</code><br>A double tap → 200 with the same body. Blocked → 409.</p></div>
+    <div class="card"><h3>Idempotent activation</h3><p class="small">One conditional statement:<br><code>UPDATE … WHERE status='pending_activation'</code><br>A double tap → 200 with the same body. Blocked → 409. Members → 403.</p></div>
     <div class="card"><h3>Keyset pagination</h3><p class="small">Opaque cursor <code>(occurred_at, id)</code>. Stable under inserts, O(log n) with the index, unlike <code>OFFSET</code>.</p></div>
     <div class="card"><h3>Snapshot reads</h3><p class="small">Dashboard queries share one read-only REPEATABLE READ transaction, so the numbers never disagree.</p></div>
     <div class="card"><h3>Demo that never breaks</h3><p class="small">Seed dates are relative to <em>now</em>, so the view matches on any day. Tests run on a real Postgres via Testcontainers.</p></div>
@@ -618,24 +619,25 @@ docs/          <span class="c">openapi.json · RFC · CHANGELOG</span></pre>
 <!-- 18 -->
 <section class="slide" data-foot="Part 2 · API">
   <div class="kicker">Testing</div>
-  <h2>Integration tests against a real database</h2>
+  <h2>Few tests, aimed at what can go wrong</h2>
   <div class="grid g-7-5" style="gap:32px">
-    <table style="font-size:16px">
-      <thead><tr><th style="width:62%">Scenario</th><th>Expect</th></tr></thead>
+    <table style="font-size:15.5px">
+      <thead><tr><th style="width:58%">Scenario</th><th>Expect</th></tr></thead>
       <tbody>
         <tr><td>Dashboard for Company AB</td><td>5 400 / 10 000, 57 / 54, invoice due</td></tr>
-        <tr><td>No or bad token</td><td>401</td></tr>
-        <tr><td>Company without membership</td><td>403</td></tr>
-        <tr><td>Other company's card id</td><td>404</td></tr>
-        <tr><td>Activate → dashboard</td><td>active, action disabled</td></tr>
-        <tr><td>Activate twice</td><td>200 · same <code>activatedAt</code></td></tr>
-        <tr><td>Page through transactions</td><td>57 unique, ordered</td></tr>
-        <tr><td>Company with nothing due</td><td><code>invoiceDue: null</code></td></tr>
+        <tr><td>No token · not a member</td><td>401 · 403</td></tr>
+        <tr><td>Other company's card id</td><td>404, no leak</td></tr>
+        <tr><td>Activate twice</td><td>200 · same body · action off</td></tr>
+        <tr><td>Member activates</td><td>403 <code>ROLE_FORBIDDEN</code></td></tr>
+        <tr><td>Page through transactions</td><td>57 unique, newest first</td></tr>
+        <tr><td>Committed spec vs schemas</td><td>identical; examples valid</td></tr>
+        <tr><td>Seed on the 1st, on New Year's Eve</td><td>still matches the wireframe</td></tr>
       </tbody>
     </table>
     <div style="display:flex;flex-direction:column;gap:16px">
-      <div class="card accent"><h3>Contract check in every test</h3><p class="small">Each 200 body is <code>parse</code>d with its Zod response schema. If the implementation drifts from the spec, the test fails.</p></div>
-      <div class="card"><h3>Isolation</h3><p class="small">One Postgres 18 container per file, reseeded before each test. No shared state with the dev DB.</p></div>
+      <div class="card accent"><h3>Contract check</h3><p class="small">API responses are <code>parse</code>d with their Zod schemas, so drift from the spec fails the test.</p></div>
+      <div class="card"><h3>Real database</h3><p class="small">Postgres 18 via Testcontainers, reseeded before each API test. No shared state with the dev DB.</p></div>
+      <div class="card"><h3>In CI</h3><p class="small">GitHub Actions runs all of it on every PR, then builds the image.</p></div>
     </div>
   </div>
 </section>
@@ -675,15 +677,14 @@ npm run openapi &amp;&amp; npm run mock</pre>
   <div class="kicker">With more time</div>
   <h2>Next steps</h2>
   <table style="font-size:16px">
-    <thead><tr><th style="width:26%">Area</th><th style="width:42%">What</th><th>Why</th></tr></thead>
+    <thead><tr><th style="width:20%">Area</th><th style="width:46%">What</th><th>Why</th></tr></thead>
     <tbody>
-      <tr><td class="k">Authorization</td><td>Role-based actions (owner/admin activate) + audit row</td><td>Least privilege, traceability</td></tr>
-      <tr><td class="k">Activation</td><td>Verification code / last4 check</td><td>Prove physical possession</td></tr>
-      <tr><td class="k">Contract CI</td><td>oasdiff on every PR; Pact if consumers multiply</td><td>Breaking changes caught before merge</td></tr>
-      <tr><td class="k">Spend accuracy</td><td>Include processor authorisation holds</td><td>Pending card auths reduce spend immediately</td></tr>
-      <tr><td class="k">Periods</td><td>Europe/Stockholm billing cycles, per-card limits</td><td>Correct month boundaries</td></tr>
-      <tr><td class="k">Transactions</td><td>Filters: date, card, status</td><td>The "54 more" view</td></tr>
-      <tr><td class="k">Platform</td><td>OIDC, rate limits, ETag, structured logs + tracing</td><td>Production hardening</td></tr>
+      <tr><td class="k">Infrastructure</td><td>Terraform for the database, service and networking</td><td>Reproducible, reviewed environments</td></tr>
+      <tr><td class="k">Billing periods</td><td>Europe/Stockholm month boundaries (demo uses UTC)</td><td>Correct spend around midnight on the 1st</td></tr>
+      <tr><td class="k">BFF service</td><td>Separate dashboard BFF that owns client auth</td><td>Mobile concerns out of core services</td></tr>
+      <tr><td class="k">Contract CI</td><td>oasdiff against <code>main</code> on every PR</td><td>Breaking changes caught before merge</td></tr>
+      <tr><td class="k">Platform</td><td>Rate limits, structured logs with request ids, tracing</td><td>Production hardening</td></tr>
+      <tr><td class="k">Security</td><td>Audit log, secrets manager, least-privilege DB user, security headers, image and dependency scanning</td><td>Card actions are sensitive; defence in depth</td></tr>
     </tbody>
   </table>
 </section>
