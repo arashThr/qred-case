@@ -571,12 +571,12 @@ svg .mono { font-family: var(--mono); }
 <!-- 16 -->
 <section class="slide" data-foot="Part 2 · API">
   <div class="kicker">Code structure</div>
-  <h2>Thin controllers, rules in services, SQL in repos</h2>
+  <h2>Thin routes, rules in services, SQL in repos</h2>
   <div class="pipeline" style="margin-bottom:28px">
     <div class="step"><b>Auth</b><span>Bearer → userId</span></div><div class="arrow">→</div>
     <div class="step"><b>Membership</b><span>:companyId → 403</span></div><div class="arrow">→</div>
     <div class="step"><b>Validate</b><span>Zod → 400</span></div><div class="arrow">→</div>
-    <div class="step hl"><b>Controller</b><span>HTTP only</span></div><div class="arrow">→</div>
+    <div class="step hl"><b>Route</b><span>HTTP only</span></div><div class="arrow">→</div>
     <div class="step hl"><b>Service</b><span>business rules</span></div><div class="arrow">→</div>
     <div class="step hl"><b>Repository</b><span>Knex SQL</span></div><div class="arrow">→</div>
     <div class="step"><b>Postgres</b><span>18</span></div>
@@ -593,10 +593,9 @@ svg .mono { font-family: var(--mono); }
       </tbody>
     </table>
 <pre style="font-size:13.5px;padding:18px 22px">src/
-  http/        <span class="c">auth · membership · validate · errors</span>
+  http/        <span class="c">auth · errors</span>
   modules/
-    dashboard/ <span class="c">schema · routes · controller</span>
-               <span class="c">service · repo</span>
+    dashboard/ <span class="c">schema · routes · service · repo</span>
     cards/  invoices/  transactions/  companies/
   db/          <span class="c">migrations · migrate · seed</span>
   openapi/     <span class="c">document · write-spec</span>

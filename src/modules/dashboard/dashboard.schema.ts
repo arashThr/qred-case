@@ -28,6 +28,8 @@ export const Spend = z
       'Spend in the current billing period against the limit. Not the invoice amount.',
   })
 
+export type Spend = z.infer<typeof Spend>
+
 export const Dashboard = z
   .object({
     asOf: z.iso

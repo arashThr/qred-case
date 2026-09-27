@@ -178,7 +178,7 @@ Errors share one shape: `{ "error": { "code": "COMPANY_FORBIDDEN", "message": ".
 
 ## Implementation
 
-Controller → Service → Repository
+Routes (thin controllers: parse with Zod, call service, respond) → Service (rules, mapping) → Repository (SQL only)
 Node.js 24, TypeScript (strict, ESM), Express 5, Knex + pg, Zod
 zod-openapi generates the OpenAPI spec from the Zod schemas; Prism mocks from it
 Testing: node:test + SuperTest + Testcontainers (real Postgres, same image as compose)

@@ -1,4 +1,5 @@
 import type { Knex } from 'knex'
+import { monthStartUtc } from '../shared/dates.js'
 import { db } from './knex.js'
 
 const DAY_MS = 24 * 60 * 60 * 1000
@@ -49,12 +50,6 @@ const THIS_MONTH_REPEATING: Purchase[] = [
   ['Postnord', 7400],
 ]
 const PENDING_NEWEST = 4
-
-function monthStartUtc(date: Date, offsetMonths = 0): Date {
-  return new Date(
-    Date.UTC(date.getUTCFullYear(), date.getUTCMonth() + offsetMonths, 1),
-  )
-}
 
 function isoDate(date: Date): string {
   return date.toISOString().slice(0, 10)
